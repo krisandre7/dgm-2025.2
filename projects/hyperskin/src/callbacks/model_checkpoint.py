@@ -13,6 +13,16 @@ class FixedModelCheckpoint(ModelCheckpoint):
             if "_class_path" in hparams:
                 hparams["class_path"] = hparams.pop("_class_path")
 
+            # if hparams has more keys that are not "class_path" or "_instantiator", they need to be moved to init_args
+            if len(hparams) > 2:
+                init_args = {k: v for k, v in hparams.items() if k not in ["class_path", "_instantiator"]}
+                new_hparams = {
+                    "class_path": hparams["class_path"],
+                    "init_args": init_args,
+                    "_instantiator": hparams["_instantiator"],
+                }
+                checkpoint["hyper_parameters"] = new_hparams
+
         # Now actually save it using torch
         trainer.save_checkpoint(filepath, weights_only=self.save_weights_only)
 

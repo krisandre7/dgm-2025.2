@@ -1,4 +1,5 @@
 # Adapted from: https://github.com/ashleve/lightning-hydra-template/blob/main/src/models/mnist_module.py
+import inspect
 from pathlib import Path
 from typing import Any
 import numpy as np
@@ -30,7 +31,8 @@ class HSIClassifierModule(pl.LightningModule):
 
         # this line allows to access init params with 'self.hparams' attribute
         # also ensures init params will be stored in ckpt
-        self.save_hyperparameters()
+
+        self.save_hyperparameters(ignore=None)
 
         if self.hparams.num_classes ==2:
             self.class_task = 'binary'
