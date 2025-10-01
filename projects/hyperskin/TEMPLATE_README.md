@@ -160,19 +160,19 @@ python src/main.py fit -c configs/data/hsi_dermoscopy_seg.yaml -c configs/model/
 **Validate**
 
 ```bash
-python src/main.py validate -c configs/data/mnist.yaml -c configs/model/simplenet.yaml --trainer.logger.name exp1
+python src/main.py validate -c configs/data/mnist.yaml -c configs/model/simplenet.yaml --trainer.logger.name exp1 --ckpt_path <ckpt_path>
 ```
 
 **Test**
 
 ```bash
-python src/main.py test -c configs/data/mnist.yaml -c configs/model/simplenet.yaml --trainer.logger.name exp1
+python src/main.py test -c configs/data/mnist.yaml -c configs/model/simplenet.yaml --trainer.logger.name exp1 --ckpt_path <ckpt_path>
 ```
 
 **Inference**
 
 ```bash
-python src/main.py predict -c configs/data/mnist.yaml -c configs/model/simplenet.yaml --trainer.logger.name exp1
+python src/main.py predict -c configs/data/mnist.yaml -c configs/model/simplenet.yaml --trainer.logger.name exp1 --ckpt_path <ckpt_path>
 ```
 
 **Debug**
