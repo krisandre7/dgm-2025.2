@@ -9,7 +9,16 @@ from pytorch_lightning.loggers import WandbLogger
 from src.models.shs_gan.shs_discriminator import Critic3D
 from src.models.shs_gan.shs_generator import Generator
 from src.data_modules.hsi_dermoscopy import HSIDermoscopyDataModule
-
+'''In WGAN-GP, the critic must satisfy the 1-Lipschitz constraint, 
+meaning its output cannot change faster than the input, which ensures the 
+Wasserstein distance is valid. Instead of clipping weights, WGAN-GP enforces 
+this through a gradient penalty, which softly pushes the gradient norm of the 
+critic with respect to interpolated samples toward 1, keeping the critic smooth and stable. 
+Additionally, the critic is usually updated multiple times per generator update (n_critics) 
+so it can reliably approximate the Wasserstein distance before the generator adapts. 
+Together, these techniques stabilize GAN training, prevent gradient explosions, 
+and help avoid mode collapse.
+'''
 
 class SHSGAN(pl.LightningModule):
     def __init__(self,
@@ -31,7 +40,7 @@ class SHSGAN(pl.LightningModule):
         self.save_hyperparameters()
         self.automatic_optimization = False
 
-        # Generator maps input image/noise → hyperspectral cube
+        # Generator maps input image/noise -> hyperspectral cube
         self.generator = Generator(
             in_channels=in_channels,
             out_channels=out_channels,
@@ -42,14 +51,15 @@ class SHSGAN(pl.LightningModule):
         self.critic = Critic3D(in_channels=out_channels, fft_arm=critic_fft_arm)
 
         # ---- Metrics ----
+        #training
         self.train_g_loss = MeanMetric()
         self.train_d_loss = MeanMetric()
         self.train_gp     = MeanMetric()
-
+        #validation
         self.val_g_loss = MeanMetric()
         self.val_d_loss = MeanMetric()
         self.val_gp     = MeanMetric()
-
+        #testing
         self.test_g_loss = MeanMetric()
         self.test_d_loss = MeanMetric()
         self.test_gp     = MeanMetric()
@@ -57,11 +67,10 @@ class SHSGAN(pl.LightningModule):
         # track best generator loss
         self.val_g_loss_best = MinMetric()
 
-    # -------------------------------------------------
-    # 🔹 Data split saving & run naming
-    # -------------------------------------------------
     def on_train_start(self):
-        # reset best metric at training start
+        # This hook runs once at the beginning of training. 
+        # It resets the best validation metric and, if the datamodule is HSIDermoscopyDataModule,
+        #  it saves the train/val/test splits to disk for reproducibility. 
         self.val_g_loss_best.reset()
 
         if self.trainer.logger and hasattr(self.trainer.logger, 'save_dir') and \
@@ -84,6 +93,9 @@ class SHSGAN(pl.LightningModule):
 
 
     def calculate_gradient_penalty(self, real_images, fake_images):
+        #This implements the WGAN-GP gradient penalty. To satisfy the Lipschitz constraint, 
+        # we interpolate between real and fake samples, pass them through the critic, 
+        #compute gradients with respect to the interpolated samples, and penalize deviations of gradient norms from 1.
         B = real_images.size(0)
 
         eta = torch.rand(B, 1, 1, 1, device=real_images.device).expand_as(real_images)
@@ -116,18 +128,18 @@ class SHSGAN(pl.LightningModule):
         for _ in range(self.hparams.n_critic):
             z = torch.randn(B, self.hparams.in_channels, H, W, device=self.device)
 
-            # 🔑 Two versions of fake_hsi
+            #Two versions of fake_hsi
             fake_hsi_detached = self.generator(z).detach()  # for critic loss
-            fake_hsi = self.generator(z)                    # for GP (keeps graph)
+            fake_hsi = self.generator(z)                    # for GP 
 
             real_score = self.critic(hsi)
             fake_score = self.critic(fake_hsi_detached)
 
-            # Enable grad in val/test, since Lightning disables it
+            # Enable grad in val/test
             with torch.enable_grad():
                 gp = self.calculate_gradient_penalty(hsi, fake_hsi)
 
-            d_loss = torch.mean(fake_score) - torch.mean(real_score) + gp
+            d_loss = torch.mean(fake_score) - torch.mean(real_score) + gp #Wasserstein min–max game: the critic approximates Wasserstein distance, and the generator minimizes it.
 
             opt_c.zero_grad()
             self.manual_backward(d_loss)

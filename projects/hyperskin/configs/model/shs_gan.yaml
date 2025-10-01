@@ -10,16 +10,15 @@ model:
 
     # --- Training hyperparameters ---
     lr: 0.0002
-    betas: [0.5, 0.999]
-    lambda_gp: 10.0           # gradient penalty coefficient
-    n_critic: 5               # critic updates per generator step
-
+    betas: [0.5, 0.999]       # Momentum terms of Adam
+    lambda_gp: 10.0           # Coefficient for the gradient penalty term in WGAN-GP. Higher values enforce Lipschitz more strongly but can over-regularize.
+    n_critic: 5               # Number of critic (discriminator) updates for each generator update
     # --- Logging ---
-    num_log_samples: 2        # number of samples to log each epoch
+    num_log_samples: 2        # Number of synthetic samples to generate and log at the end of each epoch
     log_channels: [0, 1, 2]   # channels used for pseudo-RGB logging
 
 trainer:
-  log_every_n_steps: 10
+  log_every_n_steps: 10  # Logs metrics every x training steps.
   max_epochs: 10
 
   logger:
