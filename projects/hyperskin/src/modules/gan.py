@@ -11,7 +11,7 @@ from torchmetrics.image import StructuralSimilarityIndexMeasure
 from torchmetrics.image import PeakSignalNoiseRatio
 from torchmetrics.image import SpectralAngleMapper
 from torchmetrics import MaxMetric
-from metrics.synthesis_metrics import SynthMetrics, _NoOpMetric
+from src.metrics.synthesis_metrics import SynthMetrics, _NoOpMetric
 
 
 class GANModule(LightningModule):

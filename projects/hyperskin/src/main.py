@@ -17,3 +17,5 @@ if __name__ == "__main__":
 
 #python main.py fit -c /mnt/datahdd/kris_volume/dgm-2025.2/projects/hyperskin/configs/data/hsi_dermoscopy_synth_cropped.yaml -c /mnt/datahdd/kris_volume/dgm-2025.2/projects/hyperskin/configs/model/shs_gan.yaml
 
+#src/main.py fit -c configs/data/hsi_dermoscopy_synth_cropped.yaml -c configs/model/hsi_wgan.yaml
+#python src/main.py fit -c /mnt/datahdd/kris_volume/dgm-2025.2/projects/hyperskin/configs/data/hsi_dermoscopy_croppedv2.yaml -c /mnt/datahdd/kris_volume/dgm-2025.2/projects/hyperskin/configs/model/hsi_wgan_teste.yaml

@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 class Generator(nn.Module):
     def __init__(self, in_channels=3, out_channels=16, base_filters=64, dropout_prob=0.5):
         super(Generator, self).__init__()

@@ -9,6 +9,7 @@ from pytorch_lightning.loggers import WandbLogger
 from src.models.shs_gan.shs_discriminator import Critic3D
 from src.models.shs_gan.shs_generator import Generator
 from src.data_modules.hsi_dermoscopy import HSIDermoscopyDataModule
+from src.modules.generative.gan.wgan import WGANModule
 
 
 from torchmetrics.image import StructuralSimilarityIndexMeasure
@@ -27,7 +28,7 @@ Together, these techniques stabilize GAN training, prevent gradient explosions,
 and help avoid mode collapse.
 '''
 
-class SHSGAN(pl.LightningModule):
+class SHSGAN(WGANModule):
     def __init__(self,
                  in_channels=3,
                  out_channels=16,

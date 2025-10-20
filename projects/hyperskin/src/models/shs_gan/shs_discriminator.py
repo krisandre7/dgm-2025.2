@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.utils import spectral_norm
 
 class Critic3D(nn.Module):
     def __init__(self, in_channels=16, fft_arm=True):  
@@ -73,3 +74,57 @@ class Critic3D(nn.Module):
 
         
         return self.fc(out)  # scalar per sample
+
+
+# class Critic3D(nn.Module):
+#     def __init__(self, in_channels=16, fft_arm=True):
+#         super().__init__()
+#         self.fft_arm = fft_arm
+
+#         # Spatial arm
+#         self.spatial_conv = nn.Sequential(
+#             spectral_norm(nn.Conv3d(1, 32, (5,3,3), stride=1, padding=(2,1,1))),
+#             nn.LeakyReLU(0.2, inplace=True),
+
+#             spectral_norm(nn.Conv3d(32, 64, (3,3,3), stride=2, padding=1)),
+#             nn.LeakyReLU(0.2, inplace=True),
+
+#             spectral_norm(nn.Conv3d(64, 128, (3,3,3), stride=2, padding=1)),
+#             nn.LeakyReLU(0.2, inplace=True)
+#         )
+
+#         # FFT arm
+#         if self.fft_arm:
+#             self.fft_conv = nn.Sequential(
+#                 spectral_norm(nn.Conv3d(2, 32, (5,3,3), stride=1, padding=(2,1,1))),
+#                 nn.LeakyReLU(0.2, inplace=True),
+
+#                 spectral_norm(nn.Conv3d(32, 64, (3,3,3), stride=2, padding=1)),
+#                 nn.LeakyReLU(0.2, inplace=True),
+
+#                 spectral_norm(nn.Conv3d(64, 128, (3,3,3), stride=2, padding=1)),
+#                 nn.LeakyReLU(0.2, inplace=True)
+#             )
+
+#         in_fc = 128 * (2 if fft_arm else 1)
+#         self.fc = nn.Sequential(
+#             spectral_norm(nn.Linear(in_fc, 64)),
+#             nn.LeakyReLU(0.2, inplace=True),
+#             spectral_norm(nn.Linear(64, 1))
+#         )
+
+#     def forward(self, x):
+#         B, C, H, W = x.shape
+#         x_spatial = x.unsqueeze(1)
+#         out_spatial = self.spatial_conv(x_spatial)
+#         out_spatial = F.adaptive_avg_pool3d(out_spatial, 1).view(B, -1)
+
+#         if self.fft_arm:
+#             x_fft = torch.fft.fft(x, dim=2)
+#             x_fft = torch.view_as_real(x_fft).permute(0, 5, 2, 3, 4)
+#             out_fft = self.fft_conv(x_fft)
+#             out_fft = F.adaptive_avg_pool3d(out_fft, 1).view(B, -1)
+#             out = torch.cat([out_spatial, out_fft], dim=1)
+#         else:
+#             out = out_spatial
+#         return self.fc(out)

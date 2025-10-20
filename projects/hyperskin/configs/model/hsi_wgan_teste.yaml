@@ -1,18 +1,18 @@
 model:
-  class_path: modules.WGANModule
+  class_path: src.modules.generative.gan.wgan_teste.WGANModule
   init_args:
     img_channels: 16
-    input_channels: 3
     img_size: 64
+    latent_dim: 100
     d_lr: 0.000001
     g_lr: 0.00001
     weight_decay: 0
     b1: 0.5
     b2: 0.9
-    n_critic: 1
+    n_critic: 2
     clip_value: 0.01
-    grad_penalty: 5
-    constraint_method: "clip"
+    grad_penalty: 10
+    constraint_method: "gp"
     calculate_metrics: True
     metrics: ["fid"]
     summary: True
@@ -39,11 +39,11 @@ trainer:
     # https://lightning.ai/docs/pytorch/latest/api/lightning.pytorch.callbacks.ModelCheckpoint.html#lightning.pytorch.callbacks.ModelCheckpoint
     - class_path: ModelCheckpoint
       init_args:
-        filename: epoch={epoch:02d}-val/fid_score={val/fid_score:.4f}
-        monitor: val/fid_score
+        filename: epoch={epoch:02d}-val/g_loss={val/g_loss:.4f}
+        monitor: val/g_loss
         verbose: true
         save_last: true
-        save_top_k: 5
+        save_top_k: 1
         mode: min
         auto_insert_metric_name: false
     # https://lightning.ai/docs/pytorch/latest/api/lightning.pytorch.callbacks.EarlyStopping.html#lightning.pytorch.callbacks.EarlyStopping
