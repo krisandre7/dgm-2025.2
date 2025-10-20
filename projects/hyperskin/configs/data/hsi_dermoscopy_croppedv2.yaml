@@ -2,7 +2,7 @@ data:
   class_path: data_modules.HSIDermoscopyDataModule
   init_args:
     task: GENERATION
-    allowed_labels: null
+    allowed_labels: ['melanoma']
     train_val_test_split: [0.7, 0.15, 0.15]
     image_size: 64
     batch_size: 8
