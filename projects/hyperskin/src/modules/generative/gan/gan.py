@@ -1,4 +1,5 @@
 import numpy as np
+from src.metrics.synthesis_metrics import SynthMetrics
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
@@ -132,10 +133,34 @@ class GAN(pl.LightningModule):
             img_size=img_size,
         )
 
+        # if self.metrics:
+        #     self.fid = FrechetInceptionDistance() if "fid" in self.metrics else None
+        #     self.kid = KernelInceptionDistance(subset_size=100) if "kid" in self.metrics else None
+        #     self.inception_score = InceptionScore() if "is" in self.metrics else None
+
+        #     if any(m in self.metrics for m in ["ssim", "psnr", "sam"]):
+        #         self.synth_metrics = SynthMetrics(
+        #         metrics=[m for m in ["ssim", "psnr", "sam"] if m in self.metrics],
+        #                     data_range=2.0  # because generator output is in [-1, 1]
+        #                     ).to(self.device)
+        #     else:
+        #         self.synth_metrics = None
+
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         if self.metrics:
-            self.fid = FrechetInceptionDistance() if "fid" in self.metrics else None
-            self.kid = KernelInceptionDistance(subset_size=100) if "kid" in self.metrics else None
-            self.inception_score = InceptionScore() if "is" in self.metrics else None
+            self.fid = FrechetInceptionDistance().to(device) if "fid" in self.metrics else None
+            self.kid = KernelInceptionDistance(subset_size=100).to(device) if "kid" in self.metrics else None
+            self.inception_score = InceptionScore().to(device) if "is" in self.metrics else None
+
+            if any(m in self.metrics for m in ["ssim", "psnr", "sam"]):
+                self.synth_metrics = SynthMetrics(
+                    metrics=[m for m in ["ssim", "psnr", "sam"] if m in self.metrics],
+                    data_range=2.0
+                ).to(device)
+            else:
+                self.synth_metrics = None
+
 
         self.z = torch.randn([64, latent_dim])
         if summary:
@@ -201,9 +226,20 @@ class GAN(pl.LightningModule):
                 sync_dist=torch.cuda.device_count() > 1,
             )
 
-            self.fid.reset() if "fid" in self.metrics else None
-            self.kid.reset() if "kid" in self.metrics else None
-            self.inception_score = InceptionScore().to(self.device) if "is" in self.metrics else None
+            # self.fid.reset() if "fid" in self.metrics else None
+            # self.kid.reset() if "kid" in self.metrics else None
+            # self.inception_score = InceptionScore().to(self.device) if "is" in self.metrics else None
+            # if self.synth_metrics is not None:
+            #     self.synth_metrics.reset()
+            if "fid" in self.metrics and self.fid is not None:
+                self.fid.reset()
+            if "kid" in self.metrics and self.kid is not None:
+                self.kid.reset()
+            if "is" in self.metrics and self.inception_score is not None:
+                self.inception_score.reset()
+            if self.synth_metrics is not None:
+                self.synth_metrics.reset()
+
 
     def update_metrics(self, x, x_hat):
         # if x_hat has 1 channel, repeat to make it 3 channels
@@ -243,6 +279,11 @@ class GAN(pl.LightningModule):
         if "is" in self.metrics:
             self.inception_score.update(x_hat)
 
+        if self.synth_metrics is not None:
+            x_f = (x.float() / 255.0).clamp(0, 1)
+            x_hat_f = (x_hat.float() / 255.0).clamp(0, 1)
+            self.synth_metrics.update(x_hat_f, x_f)
+
     def compute_metrics(self) -> dict[str, Tensor]:
         fid_score = self.fid.compute() if "fid" in self.metrics else None
         kid_mean, kid_std = self.kid.compute() if "kid" in self.metrics else None, None
@@ -259,6 +300,9 @@ class GAN(pl.LightningModule):
             metrics["mean_inception_score"] = is_mean
         if is_std is not None:
             metrics["std_inception_score"] = is_std
+        if self.synth_metrics is not None:
+            synth_vals = self.synth_metrics.compute()
+            metrics.update(synth_vals)
         return metrics
 
     def configure_optimizers(self):

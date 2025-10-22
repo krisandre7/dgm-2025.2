@@ -135,7 +135,7 @@ class Generator(nn.Module):
 #                 self._block(512, 1, 4, 1, 0, use_bn=False, final_layer=True),
 #             )
 
-#         elif img_size == 28:
+#         elif img_size == 128:
 #             self.model = nn.Sequential(
 #                 self._block(img_channels, 64, 4, 2, 1, use_bn=False),
 #                 self._block(64, 128, 4, 2, 1, use_bn=True),
@@ -190,39 +190,39 @@ class Generator(nn.Module):
 
 
 # class Discriminator(nn.Module):
-    # """
-    # 3D convolutional discriminator for hyperspectral images.
-    # Convolves across both spatial (H, W) and spectral (bands) dimensions.
-    # """
-    # def __init__(self, img_channels=16, img_size=64):
-    #     super().__init__()
+#     """
+#     3D convolutional discriminator for hyperspectral images.
+#     Convolves across both spatial (H, W) and spectral (bands) dimensions.
+#     """
+#     def __init__(self, img_channels=16, img_size=64):
+#         super().__init__()
 
-    #     # Expect input [B, 1, C, H, W] where C=img_channels
-    #     self.model = nn.Sequential(
-    #         # (in_channels, out_channels, kernel_size, stride, padding)
-    #         nn.Conv3d(1, 32, (3, 4, 4), stride=(1, 2, 2), padding=(1, 1, 1)),  # spectral conv
-    #         nn.LeakyReLU(0.2, inplace=True),
+#         # Expect input [B, 1, C, H, W] where C=img_channels
+#         self.model = nn.Sequential(
+#             # (in_channels, out_channels, kernel_size, stride, padding)
+#             nn.Conv3d(1, 32, (3, 4, 4), stride=(1, 2, 2), padding=(1, 1, 1)),  # spectral conv
+#             nn.LeakyReLU(0.2, inplace=True),
 
-    #         nn.Conv3d(32, 64, (3, 4, 4), stride=(1, 2, 2), padding=(1, 1, 1)),
-    #         nn.BatchNorm3d(64),
-    #         nn.LeakyReLU(0.2, inplace=True),
+#             nn.Conv3d(32, 64, (3, 4, 4), stride=(1, 2, 2), padding=(1, 1, 1)),
+#             nn.BatchNorm3d(64),
+#             nn.LeakyReLU(0.2, inplace=True),
 
-    #         nn.Conv3d(64, 128, (3, 4, 4), stride=(2, 2, 2), padding=(1, 1, 1)),  # reduces spectral depth too
-    #         nn.BatchNorm3d(128),
-    #         nn.LeakyReLU(0.2, inplace=True),
+#             nn.Conv3d(64, 128, (3, 4, 4), stride=(2, 2, 2), padding=(1, 1, 1)),  # reduces spectral depth too
+#             nn.BatchNorm3d(128),
+#             nn.LeakyReLU(0.2, inplace=True),
 
-    #         nn.Conv3d(128, 256, (3, 4, 4), stride=(2, 2, 2), padding=(1, 1, 1)),
-    #         nn.BatchNorm3d(256),
-    #         nn.LeakyReLU(0.2, inplace=True),
+#             nn.Conv3d(128, 256, (3, 4, 4), stride=(2, 2, 2), padding=(1, 1, 1)),
+#             nn.BatchNorm3d(256),
+#             nn.LeakyReLU(0.2, inplace=True),
 
-    #         nn.Conv3d(256, 1, (2, 4, 4), stride=(1, 1, 1), padding=0),  # final score
-    #     )
+#             nn.Conv3d(256, 1, (2, 4, 4), stride=(1, 1, 1), padding=0),  # final score
+#         )
 
-    # def forward(self, x):
-    #     # input: [B, C, H, W]
-    #     x = x.unsqueeze(1)  # → [B, 1, C, H, W]
-    #     out = self.model(x)
-    #     return out.view(x.size(0), -1)  # flatten to [B, 1]
+#     def forward(self, x):
+#         # input: [B, C, H, W]
+#         x = x.unsqueeze(1)  # → [B, 1, C, H, W]
+#         out = self.model(x)
+#         return out.view(x.size(0), -1)  # flatten to [B, 1]
 
 
 
@@ -272,7 +272,7 @@ class Discriminator(nn.Module):
     When fft_arm=False, only the spatial–spectral branch is used.
     """
 
-    def __init__(self, img_channels=16, img_size=64, use_fft_mag=False, fft_arm=True):
+    def __init__(self, img_channels=16, img_size=64, use_fft_mag=True, fft_arm=True):
         super().__init__()
         self.use_fft_mag = use_fft_mag
         self.fft_arm = fft_arm
@@ -288,9 +288,7 @@ class Discriminator(nn.Module):
                 nn.LeakyReLU(0.2, inplace=True)
             )
 
-        # --------------------------
-        # Spatial–Spectral Arm (always active)
-        # --------------------------
+
         self.spatial_branch = nn.Sequential(
             block(1, 32),
             block(32, 64),
@@ -298,9 +296,6 @@ class Discriminator(nn.Module):
             block(128, 256, stride=(2, 2, 2))
         )
 
-        # --------------------------
-        # Frequency Arm (FFT along spectral dimension)
-        # --------------------------
         if fft_arm:
             in_fft_channels = 1 if use_fft_mag else 2
             self.freq_branch = nn.Sequential(

@@ -4,8 +4,8 @@ model:
     img_channels: 16
     img_size: 64
     latent_dim: 100
-    d_lr: 0.000001
-    g_lr: 0.00001
+    d_lr: 0.00005
+    g_lr: 0.00002
     weight_decay: 0
     b1: 0.5
     b2: 0.9
@@ -14,7 +14,7 @@ model:
     grad_penalty: 10
     constraint_method: "gp"
     calculate_metrics: True
-    metrics: ["fid"]
+    metrics: ["ssim", "fid", "sam", "psnr"]
     summary: True
     log_images_after_n_epochs: 10
     log_metrics_after_n_epochs: 10
