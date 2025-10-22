@@ -118,75 +118,75 @@ class Generator(nn.Module):
         return next(self.parameters()).device
 
 
-# class Discriminator(nn.Module):
-#     def __init__(
-#         self,
-#         img_size: int,
-#         img_channels: int,
-#     ) -> None:
-#         super().__init__()
+class Discriminator(nn.Module):
+    def __init__(
+        self,
+        img_size: int,
+        img_channels: int,
+    ) -> None:
+        super().__init__()
 
-#         if img_size == 64:
-#             self.model = nn.Sequential(
-#                 self._block(img_channels, 64, 4, 2, 1, use_bn=False),
-#                 self._block(64, 128, 4, 2, 1, use_bn=True),
-#                 self._block(128, 256, 4, 2, 1, use_bn=True),
-#                 self._block(256, 512, 4, 2, 1, use_bn=True),
-#                 self._block(512, 1, 4, 1, 0, use_bn=False, final_layer=True),
-#             )
+        if img_size == 64:
+            self.model = nn.Sequential(
+                self._block(img_channels, 64, 4, 2, 1, use_bn=False),
+                self._block(64, 128, 4, 2, 1, use_bn=True),
+                self._block(128, 256, 4, 2, 1, use_bn=True),
+                self._block(256, 512, 4, 2, 1, use_bn=True),
+                self._block(512, 1, 4, 1, 0, use_bn=False, final_layer=True),
+            )
 
-#         elif img_size == 128:
-#             self.model = nn.Sequential(
-#                 self._block(img_channels, 64, 4, 2, 1, use_bn=False),
-#                 self._block(64, 128, 4, 2, 1, use_bn=True),
-#                 self._block(128, 256, 7, 1, 0),
-#                 self._block(256, 1, 1, 1, 0, use_bn=False, final_layer=True),
-#             )
-#         elif img_size == 256:
-#             self.model = nn.Sequential(
-#                 self._block(img_channels, 64, 4, 2, 1, use_bn=False),
-#                 self._block(64, 128, 4, 2, 1),
-#                 self._block(128, 256, 4, 2, 1),
-#                 self._block(256, 512, 4, 2, 1),
-#                 self._block(512, 1024, 4, 2, 1),
-#                 self._block(1024, 1, 4, 1, 0, use_bn=False, final_layer=True),
-#             )
-#         else:
-#             raise ValueError("Image size not supported.")
+        elif img_size == 128:
+            self.model = nn.Sequential(
+                self._block(img_channels, 64, 4, 2, 1, use_bn=False),
+                self._block(64, 128, 4, 2, 1, use_bn=True),
+                self._block(128, 256, 7, 1, 0),
+                self._block(256, 1, 1, 1, 0, use_bn=False, final_layer=True),
+            )
+        elif img_size == 256:
+            self.model = nn.Sequential(
+                self._block(img_channels, 64, 4, 2, 1, use_bn=False),
+                self._block(64, 128, 4, 2, 1),
+                self._block(128, 256, 4, 2, 1),
+                self._block(256, 512, 4, 2, 1),
+                self._block(512, 1024, 4, 2, 1),
+                self._block(1024, 1, 4, 1, 0, use_bn=False, final_layer=True),
+            )
+        else:
+            raise ValueError("Image size not supported.")
 
-#         self.model = initialize_weights(self.model)
+        self.model = initialize_weights(self.model)
 
-#     @staticmethod
-#     def _block(
-#         in_channels: int,
-#         out_channels: int,
-#         kernel_size: int,
-#         stride: int,
-#         padding: int,
-#         use_bn: bool = True,
-#         final_layer: bool = False,
-#     ) -> nn.Sequential:
-#         """
-#         Returns a block for the discriminator containing
-#         - a strided convolution,
-#         - optional batch normalization,
-#         - and a LeakyReLU activation.
-#         """
-#         return nn.Sequential(
-#             nn.Conv2d(
-#                 in_channels,
-#                 out_channels,
-#                 kernel_size,
-#                 stride,
-#                 padding,
-#                 bias=False,
-#             ),
-#             nn.BatchNorm2d(out_channels) if use_bn else nn.Identity(),
-#             nn.LeakyReLU(0.2, inplace=True) if not final_layer else nn.Identity(),
-#         )
+    @staticmethod
+    def _block(
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int,
+        stride: int,
+        padding: int,
+        use_bn: bool = True,
+        final_layer: bool = False,
+    ) -> nn.Sequential:
+        """
+        Returns a block for the discriminator containing
+        - a strided convolution,
+        - optional batch normalization,
+        - and a LeakyReLU activation.
+        """
+        return nn.Sequential(
+            nn.Conv2d(
+                in_channels,
+                out_channels,
+                kernel_size,
+                stride,
+                padding,
+                bias=False,
+            ),
+            nn.BatchNorm2d(out_channels) if use_bn else nn.Identity(),
+            nn.LeakyReLU(0.2, inplace=True) if not final_layer else nn.Identity(),
+        )
 
-#     def forward(self, x: Tensor) -> Tensor:
-#         return self.model(x).squeeze()
+    def forward(self, x: Tensor) -> Tensor:
+        return self.model(x).squeeze()
 
 
 # class Discriminator(nn.Module):
@@ -262,99 +262,99 @@ class Generator(nn.Module):
 #         return out.view(x.size(0), -1)  # flatten to [B, 1]
 
 
-class Discriminator(nn.Module):
-    """
-    Dual-branch 3D Discriminator following the SHS-GAN architecture.
+# class Discriminator(nn.Module):
+#     """
+#     Dual-branch 3D Discriminator following the SHS-GAN architecture.
     
-    - Arm 1: spatial–spectral 3D convolutional branch (original HS cube).
-    - Arm 2: frequency branch operating on the spectral FFT of the cube.
+#     - Arm 1: spatial–spectral 3D convolutional branch (original HS cube).
+#     - Arm 2: frequency branch operating on the spectral FFT of the cube.
     
-    When fft_arm=False, only the spatial–spectral branch is used.
-    """
+#     When fft_arm=False, only the spatial–spectral branch is used.
+#     """
 
-    def __init__(self, img_channels=16, img_size=64, use_fft_mag=True, fft_arm=True):
-        super().__init__()
-        self.use_fft_mag = use_fft_mag
-        self.fft_arm = fft_arm
+#     def __init__(self, img_channels=16, img_size=64, use_fft_mag=True, fft_arm=True):
+#         super().__init__()
+#         self.use_fft_mag = use_fft_mag
+#         self.fft_arm = fft_arm
 
-        # --------------------------
-        # Helper convolutional block
-        # --------------------------
-        def block(in_c, out_c, stride=(1, 2, 2)):
-            return nn.Sequential(
-                utils.spectral_norm(
-                    nn.Conv3d(in_c, out_c, (3, 4, 4), stride=stride, padding=(1, 1, 1))
-                ),
-                nn.LeakyReLU(0.2, inplace=True)
-            )
+#         # --------------------------
+#         # Helper convolutional block
+#         # --------------------------
+#         def block(in_c, out_c, stride=(1, 2, 2)):
+#             return nn.Sequential(
+#                 utils.spectral_norm(
+#                     nn.Conv3d(in_c, out_c, (3, 4, 4), stride=stride, padding=(1, 1, 1))
+#                 ),
+#                 nn.LeakyReLU(0.2, inplace=True)
+#             )
 
 
-        self.spatial_branch = nn.Sequential(
-            block(1, 32),
-            block(32, 64),
-            block(64, 128, stride=(2, 2, 2)),
-            block(128, 256, stride=(2, 2, 2))
-        )
+#         self.spatial_branch = nn.Sequential(
+#             block(1, 32),
+#             block(32, 64),
+#             block(64, 128, stride=(2, 2, 2)),
+#             block(128, 256, stride=(2, 2, 2))
+#         )
 
-        if fft_arm:
-            in_fft_channels = 1 if use_fft_mag else 2
-            self.freq_branch = nn.Sequential(
-                block(in_fft_channels, 32),
-                block(32, 64),
-                block(64, 128, stride=(2, 2, 2)),
-                block(128, 256, stride=(2, 2, 2))
-            )
+#         if fft_arm:
+#             in_fft_channels = 1 if use_fft_mag else 2
+#             self.freq_branch = nn.Sequential(
+#                 block(in_fft_channels, 32),
+#                 block(32, 64),
+#                 block(64, 128, stride=(2, 2, 2)),
+#                 block(128, 256, stride=(2, 2, 2))
+#             )
 
-            # Fusion + classifier (for dual-arm setup)
-            self.classifier = nn.Sequential(
-                utils.spectral_norm(nn.Conv3d(512, 256, (2, 4, 4), stride=1, padding=0)),
-                nn.LeakyReLU(0.2, inplace=True),
-                utils.spectral_norm(nn.Conv3d(256, 1, 1))
-            )
-        else:
-            # Single-arm classifier (only spatial)
-            self.classifier = nn.Sequential(
-                utils.spectral_norm(nn.Conv3d(256, 128, (2, 4, 4), stride=1, padding=0)),
-                nn.LeakyReLU(0.2, inplace=True),
-                utils.spectral_norm(nn.Conv3d(128, 1, 1))
-            )
+#             # Fusion + classifier (for dual-arm setup)
+#             self.classifier = nn.Sequential(
+#                 utils.spectral_norm(nn.Conv3d(512, 256, (2, 4, 4), stride=1, padding=0)),
+#                 nn.LeakyReLU(0.2, inplace=True),
+#                 utils.spectral_norm(nn.Conv3d(256, 1, 1))
+#             )
+#         else:
+#             # Single-arm classifier (only spatial)
+#             self.classifier = nn.Sequential(
+#                 utils.spectral_norm(nn.Conv3d(256, 128, (2, 4, 4), stride=1, padding=0)),
+#                 nn.LeakyReLU(0.2, inplace=True),
+#                 utils.spectral_norm(nn.Conv3d(128, 1, 1))
+#             )
 
-    # --------------------------
-    # Forward Pass
-    # --------------------------
-    def forward(self, x):
-        """
-        x: [B, C, H, W] where
-            C = spectral bands,
-            H, W = spatial dimensions.
-        """
-        x = x.unsqueeze(1)  # → [B, 1, C, H, W]
+#     # --------------------------
+#     # Forward Pass
+#     # --------------------------
+#     def forward(self, x):
+#         """
+#         x: [B, C, H, W] where
+#             C = spectral bands,
+#             H, W = spatial dimensions.
+#         """
+#         x = x.unsqueeze(1)  # → [B, 1, C, H, W]
 
-        # --- Spatial–Spectral Path ---
-        feat_spatial = self.spatial_branch(x)
+#         # --- Spatial–Spectral Path ---
+#         feat_spatial = self.spatial_branch(x)
 
-        # If FFT arm disabled, only use spatial path
-        if not self.fft_arm:
-            out = self.classifier(feat_spatial)
-            return out.view(x.size(0), -1)
+#         # If FFT arm disabled, only use spatial path
+#         if not self.fft_arm:
+#             out = self.classifier(feat_spatial)
+#             return out.view(x.size(0), -1)
 
-        # --- Frequency Path (FFT over spectral dimension) ---
-        # Apply 1D FFT along the spectral (band) axis: dim=2
-        fft = torch.fft.fft(x, dim=2, norm="ortho")
+#         # --- Frequency Path (FFT over spectral dimension) ---
+#         # Apply 1D FFT along the spectral (band) axis: dim=2
+#         fft = torch.fft.fft(x, dim=2, norm="ortho")
 
-        if self.use_fft_mag:
-            fft_input = fft.abs()  # use magnitude of spectral FFT
-        else:
-            fft_input = torch.cat((fft.real, fft.imag), dim=1)  # [B, 2, C, H, W]
+#         if self.use_fft_mag:
+#             fft_input = fft.abs()  # use magnitude of spectral FFT
+#         else:
+#             fft_input = torch.cat((fft.real, fft.imag), dim=1)  # [B, 2, C, H, W]
 
-        feat_freq = self.freq_branch(fft_input)
+#         feat_freq = self.freq_branch(fft_input)
 
-        # --- Fusion ---
-        fused = torch.cat([feat_spatial, feat_freq], dim=1)  # concat along channel dim
+#         # --- Fusion ---
+#         fused = torch.cat([feat_spatial, feat_freq], dim=1)  # concat along channel dim
 
-        # --- Final decision ---
-        out = self.classifier(fused)
-        return out.view(x.size(0), -1)
+#         # --- Final decision ---
+#         out = self.classifier(fused)
+#         return out.view(x.size(0), -1)
 
 class DCGAN(GAN):
     """
