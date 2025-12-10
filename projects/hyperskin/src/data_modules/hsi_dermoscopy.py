@@ -697,7 +697,7 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
     def teardown(self, stage=None):
         pass
 
-    def export_dataset(self, output_dir: str, **kwargs):
+    def export_dataset(self, output_dir: str, data_type = 'hyperspectral', **kwargs):
         """Export dataset using the HSI exporter."""
         from src.utils.dataset_exporter import HSIDatasetExporter
 
@@ -706,6 +706,8 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
             output_dir,
             global_min=self.global_min,
             global_max=self.global_max,
+            data_type=data_type,
+            
         )
         exporter.export(**kwargs)
 
@@ -800,13 +802,13 @@ if __name__ == "__main__":
         task="CLASSIFICATION_MELANOMA_VS_DYSPLASTIC_NEVI",
         train_val_test_split=(0.7, 0.15, 0.15),
         batch_size=8,
-        global_max=[0.6203158, 0.6172642, 0.46794897, 0.4325111, 0.4996644, 0.61997396,
-                  0.7382196, 0.86097705, 0.88304037, 0.9397393, 1.1892519, 1.5035477,
-                  1.4947973, 1.4737314, 1.6318618, 1.7226081],
-        global_min=[0.00028473, 0.0043945, 0.00149752, 0.00167517, 0.00190101, 0.0028114,
-                  0.00394378, 0.00488099, 0.00257091, 0.00215704, 0.00797662, 0.01205248,
-                  0.01310135, 0.01476806, 0.01932094, 0.02020744],
-        data_dir="data/hsi_dermoscopy",
+        # global_max=[0.6203158, 0.6172642, 0.46794897, 0.4325111, 0.4996644, 0.61997396,
+        #           0.7382196, 0.86097705, 0.88304037, 0.9397393, 1.1892519, 1.5035477,
+        #           1.4947973, 1.4737314, 1.6318618, 1.7226081],
+        # global_min=[0.00028473, 0.0043945, 0.00149752, 0.00167517, 0.00190101, 0.0028114,
+        #           0.00394378, 0.00488099, 0.00257091, 0.00215704, 0.00797662, 0.01205248,
+        #           0.01310135, 0.01476806, 0.01932094, 0.02020744],
+        data_dir="data/hsi_dermoscopy_synth_fastgan",
         image_size=image_size,
         transforms={
             "train": [
@@ -835,17 +837,17 @@ if __name__ == "__main__":
 
     # Export dataset example
     data_module.export_dataset(
-        output_dir="export/hsi_dermoscopy_croppedv2_256_with_masks_val_test",
+        output_dir="export/hsi_dermoscopy_synth_fastgan_rgb", data_type='rgb',
         splits=[
-            # "train",
+            "train",
             "val",
             "test"
         ],
-        crop_with_mask=True,
+        crop_with_mask=False,
         bbox_scale=2,
-        structure="imagenet",
+        structure="flat",
         image_size=image_size,
-        # allowed_labels=["melanoma", "dysplastic_nevi"],
+        allowed_labels=["melanoma"],
         global_normalization=False,
         export_cropped_masks=False,
     )
