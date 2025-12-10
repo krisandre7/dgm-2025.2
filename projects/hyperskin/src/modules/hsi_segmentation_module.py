@@ -102,7 +102,7 @@ class HSISegmentationModule(pl.LightningModule):
 
     # ---------------- VALIDATION ----------------
     def validation_step(self, batch: Any, batch_idx: int):
-        loss, preds, targets = self._shared_step(batch)
+        loss, preds, targets, label = self._shared_step(batch)
         self.val_loss(loss)
         self.val_iou(preds, targets)
         self.val_dice(preds, targets)
@@ -122,7 +122,7 @@ class HSISegmentationModule(pl.LightningModule):
 
     # ---------------- TEST ----------------
     def test_step(self, batch: Any, batch_idx: int):
-        loss, preds, targets = self._shared_step(batch)
+        loss, preds, targets, label = self._shared_step(batch)
         self.test_loss(loss)
         self.test_iou(preds, targets)
         self.test_dice(preds, targets)
