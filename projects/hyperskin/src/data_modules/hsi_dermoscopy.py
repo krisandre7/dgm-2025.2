@@ -707,7 +707,6 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
             global_min=self.global_min,
             global_max=self.global_max,
             data_type=data_type,
-            
         )
         exporter.export(**kwargs)
 
