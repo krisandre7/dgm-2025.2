@@ -13,10 +13,9 @@ offered in the second semester of 2025, at Unicamp, under the supervision of Pro
 | Aline Yoshida Machado | 265732 | Physics Engineering|
 
 # Abstract / Project Description
-Hyperspectral Imaging (HSI) combines imaging and spectroscopy, giving each pixel a continuous spectrum across wavelengths. HSI captures how light interacts with molecules, as their composition, vibrations, and structure affect photon behavior. These light–matter interactions create distinct spectral patterns that act like unique “fingerprints” for each material. Thanks to its ability to distinguish different materials, tissues, and substances, Hyperspectral Imaging (HSI) has become a valuable tool in Remote Sensing, Agriculture, and Medicine. In medicine, its capacity to go beyond standard RGB imaging is mainly used to detect tumors. However, publicly available hyperspectral tumor datasets are scarce, which often leads melanoma classification models to overfit or perform poorly in subsampled classes. Therefore, the main goal of this project is to construct a generative ai model that creates a synthetic hyperspectral dermoscopy dataset. More specifically, we investigated how synthetic hyperspectral images affect the performance of a melanoma classifier, hoping that a classifier trained with both synthetic and real hyperspectral images, would outperform a classifier trained with only real images. 
+Hyperspectral Imaging (HSI) combines imaging and spectroscopy to create unique spectral fingerprints for materials, making it a powerful tool for tumor detection in medicine. However, the scarcity of publicly available hyperspectral tumor datasets often causes melanoma classification models to overfit or struggle with underrepresented classes. This project aims to address this data gap by constructing a generative AI model capable of synthesizing realistic hyperspectral dermoscopy images. Utilizing a dataset of 330 histopathologically validated images with 16 spectral bands ranging from 465 nm to 630 nm, we investigated the impact of synthetic augmentation on melanoma classifier performance. We trained and evaluated diverse generative architectures, including unconditional models like SHSGAN, FastGAN, and VAE, as well as RGB-conditioned models such as CycleGAN and SPADE FastGAN which leverage RGB images for enhanced spatial detail.
 
-To test this hypothesis, we trained generative models, including SHSGAN, DCGAN, FastGAN and VAE, to produce realistic hyperspectral melanoma images and evaluated their quality using spectral and perceptual metrics. Among them, FastGAN achieved the best balance between spectral accuracy and structural realism, generating synthetic lesions that closely resembled real samples. These synthetic images were then integrated into the training of melanoma classifiers based on DenseNet and ResNet architectures. The classifiers trained with both real and synthetic data outperformed those trained solely on real data, achieving higher validation accuracy (0.84 vs. 0.79) and F1-score (0.89 vs. 0.85).
-
+To assess utility, these synthetic lesions were integrated into the training of DenseNet201 and EfficientNet-b6 classifiers. The inclusion of synthetic data consistently improved performance compared to a baseline trained solely on real data, increasing the validation F1-score from 0.8852 to 0.9000 and specificity from 0.6429 to 0.7143. Contrary to expectations, models conditioned on RGB images did not outperform unconditional ones, indicating that spectral fidelity is more critical for classification than RGB guidance. While synthetic data successfully mitigated class imbalance and improved validation metrics, the study concludes that challenges remain regarding generalization to independent test sets.
 
 # Main Goal
 Therefore, the main goal of this project is to construct a generative ai model that learns the distribution of real hyperspectral images and through them is able to create a synthetic hyperspectral melanoma dataset. Desired output: a synthetic hyperspectral dataset of skin lesions and melanoma. 
@@ -29,12 +28,14 @@ This work also explores the general use of hyperspectral synthetic data to impro
 - Does the inclusion of synthetic samples enhance the performance of a classifier trained from scratch when only a small amount of real data is available?
 - Does synthetic data improve the performance of a generalist classifier pretrained on large-scale datasets such as ImageNet?
 - Does it also benefit a specialist classifier pretrained on RGB melanoma images?
+- Is synthetic data conditioned on RGB images superior to unconditioned synthetic data for improving classification performance?
 - What is the optimal proportion of synthetic data to mix with real data during training?
 - How does the quality of synthetic images influence downstream classifier performance?
+- Can synthetic data substitute this dataset for melanoma classification?
 
 ## Presentation
 ### Slides
-https://docs.google.com/presentation/d/16PthBsxWUrnjjb5saw3rDCTorvTyX7CcnbJKjngEmF8/edit?usp=sharing
+https://docs.google.com/presentation/d/1ymxQE8vHV4Y9HFyBkXeNziKD5m46efOuLY6WJC2PsvQ/edit?usp=sharing
 
 ## Dataset
 - Github link: https://github.com/heugyy/HSIDermoscopy
@@ -45,7 +46,10 @@ https://docs.google.com/presentation/d/16PthBsxWUrnjjb5saw3rDCTorvTyX7CcnbJKjngE
 #### SHS GAN [5]
 The model receives as input a standard RGB image and its task is to generate a synthetic hyperspectral cube. The objective of the Generator is to learn a mapping from the RGB domain to the HS domain, so that the distribution of the synthetic HS cubes becomes similar to the distribution of real HS cubes. The RGB image is used as input to the Generator so that the synthetic HS cube preserves the spatial details and textures of the input image and also keeps the color properties coherent with what appears in the RGB. The Critic is trained to evaluate whether the generated HS cubes are realistic. It does so by analyzing spatial patterns and also the smoothness and shape of spectral curves, which are emphasized by looking at the data in both the image and Fourier-transformed spectral domains. In addition, the synthetic HS cube can be converted back into RGB using a deterministic transformation. This reconstructed RGB image is compared to the original input RGB, and differences are penalized during training. This step enforces consistency between the generated HS cube and the original RGB image. It is used a WGAN training pipeline
 
-![SHS Architecture Diagram](images/SHS-GAN.png)
+
+<p align="center">
+  <img src="images/SHS-GAN.png" width="300">
+</p>
 
 #### FastGAN
 - **Minimalist Architecture:** The model uses a lightweight GAN structure with a single convolution layer per resolution and very few channels (e.g., three) at high resolutions ($\ge 512^2$) to ensure low computational cost and fast training.
@@ -201,10 +205,11 @@ We expect the quality of synthetic hyperspectral images to improve with future g
 Our next step is to use RGB images as inputs to the generator instead of random noise and include a reconstruction loss between the generated and real RGB representations.  
 This approach encourages the generator to learn meaningful spatial and color relationships, using them to reconstruct high-quality hyperspectral data.
 
-![Exp1](images/2d-conv-plot.png)  
-![Exp2](images/3d-convolution-plot.png)  
-![Exp3](images/3d-conv-sn.png)  
-![Exp4](images/3D-conv-sn-fft.png)
+| 2D Conv | 3D Conv | 3D conv + SN| 3D conv + SN + FFT|
+|-------|-------|-------|-------|
+| ![Exp1](images/2d-conv-plot.png) | ![Exp2](images/3d-convolution-plot.png) | ![Exp3](images/3d-conv-sn.png) | ![Exp4](images/3D-conv-sn-fft.png) |
+
+
 #### FastGAN
 The FastGAN experiment was conducted to generate synthetic hyperspectral images of melanoma lesions using a 16-channel input configuration and an image size of 256×256 pixels. The model was trained with a learning rate of 0.0002 and a latent dimension of 256, following the original FastGAN training procedure that includes manual optimization, exponential moving average updates, and perceptual consistency losses. The goal was to evaluate how well the generator could reproduce realistic skin lesion patterns and retain spectral properties similar to real melanoma samples.  
 
@@ -230,15 +235,37 @@ SPADE-FastGAN introduces spatially adaptive normalization (SPADE) to replace the
 <p align="center">
   <img src="images/spade_normalization.png" width="300">
 </p>
+<p align="center">
+  <img src="images/spade_fastgan_hsi_grid.png" width="300">
+</p>
 
 #### Cycle GAN
 CycleGAN is a training approach that learns image translation between two unpaired domains, which in our context is RGB and HSI images. Unlike supervised models that require aligned RGB–HSI pairs, CycleGAN uses a set of complementary losses that make training possible with independent datasets. The key idea is the cycle-consistency constraint, which is that if we translate an RGB image into an HSI image and then pass it back through the inverse generator, we should recover the original RGB image. This constraint forces both generators to learn transformations that are meaningful avoiding degenerate solutions, allowing CycleGAN to synthesize high quality hyperspectral outputs from RGB inputs.
 
+
+<p align="center">
+  <img src="images/cyclegan_hsi_grid.png" width="300">
+</p>
+
+
+<p align="center">
+  <img src="images/cycle_gan_validation.png" width="300">
+</p>
+
+
 #### VAE Autoencoder 
 
 Similarly as the FastGAN, VAE autoencoder was trained with a 16-channel input configuration and an image size of 256×256 pixels. The model was trained with a learning rate of 0.0002 and a latent dimension of 64. Loss function was set to have a term with a KL-divergence regularizer weighted by kld_weight = 1×10⁻², encouraging smooth, semantically meaningful latents while preserving spectral fidelity. Overall the results look like melanoma images but lack the details present in a realistic hyperspectral image. Spectral similarity was also achieved. 
-![vaeimages](images/vae-results.png)
-![vae_spectra](images/vae_spectra.png)
+<!-- ![vaeimages](images/vae-results.png) -->
+<!-- ![vae_spectra](images/vae_spectra.png) -->
+
+<p align="center">
+  <img src="images/vae-results.png" width="300">
+</p>
+
+<p align="center">
+  <img src="images/vae_spectra.png" width="300">
+</p>
 
 ## Classifier Training with Synthetic Data 
 
@@ -273,30 +300,25 @@ The objective of this experiment was to verify whether training a hyperspectral 
 |:--:|:------------:|:--------------:|:-------:|:---------------:|:-------:|:----------------:|
 | 1  | Densenet201  | No             | 0.8852  | 0.6429          | 0.73    | 0.53             |
 | 2  | Densenet201  | Yes            | 0.9000  | 0.7143          | 0.75    | 0.26             |
-| 3  | EfficientNet | No             | 0.9000  | 0.7143          |         |                  |
-| 4  | EfficientNet | Yes            | 0.9000  | 0.7143          |         |                  |
 
 
+The results show a clear improvement during validation when synthetic data is included. Validation F1 increased from 0.8852 in the real-only model to 0.9000 when synthetic melanoma samples were added. Specificity also improved substantially, from 0.6429 to 0.7143, suggesting that synthetic samples helped the model better distinguish melanoma from dysplastic nevi under controlled validation conditions.
 
-| Metric (On Validation Set) | Without Synthetic Data | With Synthetic Data |
-|:--|:--:|:--:|
-| Accuracy | 0.79 | **0.84** |
-| Best Accuracy | 0.81 | **0.86** |
-| F1-score | 0.85 | **0.89** |
-| Precision | **0.83** | 0.81 |
-| Recall | 0.86 | **1.00** |
-| Specificity (at Sensitivity 0.95) | **0.37** | 0.32 |
-| Loss | 0.53 | **0.51** |
+However, performance on the independent test set reveals a more nuanced picture. The synthetic-data model achieved a slightly higher Test F1 (0.75) than the real-only model (0.73), indicating a modest benefit in generalization. Yet, the test specificity dropped from 0.53 to 0.26, suggesting that while the model became more sensitive to melanoma, it did so at the expense of misclassifying more dysplastic nevi.
 
-The results showed that the model trained with real data only reached a validation accuracy of approximately 0.79, with a best recorded validation accuracy of 0.81. Its validation F1-score was 0.85, precision 0.83, and recall 0.86. On the other hand, when trained with synthetic data, the model achieved higher overall performance, reaching a validation accuracy of 0.84 and a best validation accuracy of 0.86. The F1-score increased to 0.89, and although validation precision slightly decreased from 0.83 to 0.81, recall improved dramatically from 0.86 to 1.00. The validation loss also decreased slightly, indicating more stable learning, while the specificity at a sensitivity of 0.95 dropped moderately from 0.37 to 0.32. These results demonstrate that the model trained with synthetic data achieved stronger classification performance, particularly in detecting melanoma cases, without overfitting or losing generalization.  
-
-The inclusion of synthetic melanoma samples effectively mitigated the class imbalance that typically biases the network toward the majority class. By generating a balanced training distribution, the model became substantially more sensitive to melanoma patterns, increasing its ability to detect malignant lesions. This improvement, however, came with a modest reduction in specificity. While this means the classifier produced more false-positive melanoma predictions, it also ensured that all melanoma cases were correctly detected. In medical imaging scenarios, particularly in melanoma screening, higher sensitivity is often prioritized since missing a malignant case is far more critical than a false alarm. Therefore, the trade-off observed here is generally acceptable from a clinical standpoint.  
-
-From a training perspective, balancing the data appeared to stabilize convergence and reduce loss variability between epochs. The model with synthetic data reached higher accuracy and lower loss after more epochs, suggesting that the GAN-generated samples helped the network generalize better across the minority class. The improved F1-score reflects a more balanced classification behavior, confirming that synthetic hyperspectral melanoma data played a beneficial role in improving both learning stability and predictive fairness.  
-
-In summary, integrating FastGAN-generated hyperspectral melanoma samples into the training set led to a measurable improvement in classification performance. The balanced model achieved perfect recall and higher overall validation accuracy compared to the model trained on real data alone. Although the slight drop in specificity indicates a small increase in false positives, the results strongly suggest that GAN-based data augmentation is an effective strategy for addressing class imbalance in hyperspectral dermoscopy classification tasks.  
+Overall, these results suggest that synthetic melanoma samples can enhance performance when real data is scarce, particularly in terms of F1-score and validation robustness. However, the drop in test specificity highlights that synthetic augmentation may shift the decision boundary, causing the classifier to overpredict melanoma in unseen data. This indicates that synthetic data is helpful but should be used carefully—ideally complemented by additional real samples or more diverse synthetic generation—to avoid degrading specificity in real-world settings.
 
 ### Does synthetic data improve the performance of a generalist classifier pretrained on large-scale datasets such as ImageNet?
+We utilized a DenseNet201 model, pretrained on ImageNet, to evaluate the impact of synthetic hyperspectral data on a generalist classifier. The model's weights were initialized from the pretrained ImageNet weights, and the first convolutional layer was modified to accept 16 channels instead of the original 3. This was achieved by averaging the weights across the RGB channels and replicating them to match the 16-channel input.
+
+The modified DenseNet201 model was fine-tuned on our hyperspectral dermoscopy dataset under two conditions: first, using only real hyperspectral images, and second, incorporating synthetic melanoma samples generated by the FastGAN architecture. The goal was to assess whether the addition of synthetic data could enhance classification performance compared to training solely on real data.
+
+The table below summarizes the validation metrics for both training conditions. The baseline model, trained only on real hyperspectral images, achieved a validation F1-score of 0.8852, specificity of 0.6429, and recall of 0.9310. When synthetic melanoma samples were included in the training set, the model's performance improved across all metrics, achieving a validation F1-score of 0.9000, specificity of 0.7143, and recall of 0.9310. This indicates that the inclusion of synthetic hyperspectral images positively influenced the model's ability to classify melanoma.
+
+| Model                            | Val F1   | Val Specificity | Val Recall | Generative Model |
+|----------------------------------|-----------|------------------|-------------|------------------|
+| DenseNet201 Baseline        | 0.885246 | 0.642857        | 0.931035   | —                |
+| DenseNet201 Synthetic       | 0.9      | 0.714286        | 0.931035   | FastGAN          |
 
 ### Is synthetic data conditioned on RGB images superior to unconditioned synthetic data for improving classification performance?
 To answer this question, we compared the performance of DenseNet201 classifiers trained with synthetic hyperspectral images generated by unconditioned and RGB-conditioned generative models. The unconditioned model used was FastGAN, while the RGB-conditioned models employed were:
@@ -305,9 +327,9 @@ To answer this question, we compared the performance of DenseNet201 classifiers 
 
 All rgb-conditioned models were trained using RGB images from the MILK10K dataset [10], which contains a large number of dermoscopic RGB images of skin lesions. The synthetic hyperspectral images generated by these models were then used to augment the training set for DenseNet201 classifiers, which were pretrained on ImageNet.
 
-The figure below compares the performance of classifiers trained with synthetic datasets generated by three models, CycleGAN, SPADE FastGAN, and FastGAN, against the best real-data baseline across four key validation metrics: F1-score, specificity, recall, and balanced accuracy. Each subplot shows the baseline performance as a blue dotted line and the corresponding synthetic results as red bars.
+The figure below compares the performance of classifiers trained with synthetic datasets generated by three models, CycleGAN, SPADE FastGAN, and FastGAN, against the best real-data baseline across four key validation metrics: F1-score, specificity and recall. Each subplot shows the baseline performance as a blue dotted line and the corresponding synthetic results as red bars.
 
-The results indicate that SPADE FastGAN and unconditioned FastGAN both surpassed the real-data baseline in both F1-score and balanced accuracy, while CycleGAN obtained results comparable to the baseline. The lower performance of CycleGAN may be attributed to its architecture, which impose a high regularization through cycle-consistency loss, potentially limiting its ability to generate high-fidelity hyperspectral images.
+The results indicate that SPADE FastGAN and unconditioned FastGAN both surpassed the real-data baseline in F1-score, while CycleGAN obtained results comparable to the baseline. The lower performance of CycleGAN may be attributed to its architecture, which impose a high regularization through cycle-consistency loss, potentially limiting its ability to generate high-fidelity hyperspectral images.
 
 Notably, SPADE FastGAN achieved the same results as FastGAN in all four metrics, suggesting that conditioning on RGB images did not provide a significant advantage over unconditioned generation in this context. This outcome may be due to the gap between RGB and hyperspectral modalities, where the additional information from RGB images does not translate effectively into improved hyperspectral synthesis for classification purposes.
 
@@ -325,13 +347,27 @@ The results indicate that both architectures benefited from the addition of synt
 
 However, not only does the EfficientNet-b6 model have a significantly higher number of parameters (66 million vs. 20 million for DenseNet201), but it also required a generative model trained on both hyperspectral and RGB data to achieve comparable results to the DenseNet201 model, which was trained with a simpler unconditioned FastGAN. In conclusion, the use of a specialist classifier pretrained on RGB melanoma images does not appear to provide a substantial advantage over a generalist classifier like DenseNet201 when both are augmented with high-quality synthetic hyperspectral data, possibly due to a gap in domain adaptation between RGB and hyperspectral modalities.
 
-| Metric               | Best DenseNet201 Baseline | Best DenseNet201 Synthetic | Best ISIC2019-EffNetB6 Baseline | Best ISIC2019-EffNetB6 Synthetic |
-|----------------------|---------------------------|-----------------------------|----------------------------------|----------------------------------|
-| Val F1               | 0.885246                 | 0.9                         | 0.857143                        | 0.9                              |
-| Val Specificity      | 0.642857                 | 0.714286                    | 0.785714                        | 0.714286                         |
-| Val Recall           | 0.931035                 | 0.931035                    | 0.827586                        | 0.931035                         |
-| Val Bal. Acc.        | 0.786946                 | 0.82266                     | 0.80665                         | 0.82266                          |
-| Generative Model     | —                        | FastGAN                    | —                               | SPADE FastGAN                    |
+| Model                            | Val F1   | Val Specificity | Val Recall | Generative Model |
+|----------------------------------|-----------|------------------|-------------|------------------|
+| DenseNet201 Baseline        | 0.885246 | 0.642857        | 0.931035   | —                |
+| DenseNet201 Synthetic       | 0.9      | 0.714286        | 0.931035   | FastGAN          |
+| ISIC2019-EffNetB6 Baseline  | 0.857143 | 0.785714        | 0.827586   | —                |
+| ISIC2019-EffNetB6 Synthetic | 0.9      | 0.714286        | 0.931035   | SPADE FastGAN    |
+
+### Is synthetic data conditioned on RGB images superior to unconditioned synthetic data for improving classification performance?
+To answer this question, we compared the performance of DenseNet201 classifiers trained with synthetic hyperspectral images generated by unconditioned and RGB-conditioned generative models. The unconditioned model used was FastGAN, while the RGB-conditioned models employed were:
+- CycleGAN, which translates RGB images to hyperspectral images without paired data [13].
+- SPADE FastGAN, which generates hyperspectral images conditioned on RGB inputs using spatially-adaptive normalization (SPADE) [12].
+
+All rgb-conditioned models were trained using RGB images from the MILK10K dataset [10], which contains a large number of dermoscopic RGB images of skin lesions. The synthetic hyperspectral images generated by these models were then used to augment the training set for DenseNet201 classifiers, which were pretrained on ImageNet.
+
+The figure below compares the performance of classifiers trained with synthetic datasets generated by three models, CycleGAN, SPADE FastGAN, and FastGAN, against the best real-data baseline across four key validation metrics: F1-score, specificity, recall, and balanced accuracy. Each subplot shows the baseline performance as a blue dotted line and the corresponding synthetic results as red bars.
+
+The results indicate that SPADE FastGAN and unconditioned FastGAN both surpassed the real-data baseline in both F1-score and balanced accuracy, while CycleGAN obtained results comparable to the baseline. The lower performance of CycleGAN may be attributed to its architecture, which impose a high regularization through cycle-consistency loss, potentially limiting its ability to generate high-fidelity hyperspectral images.
+
+Notably, SPADE FastGAN achieved the same results as FastGAN in all four metrics, suggesting that conditioning on RGB images did not provide a significant advantage over unconditioned generation in this context. This outcome may be due to the gap between RGB and hyperspectral modalities, where the additional information from RGB images does not translate effectively into improved hyperspectral synthesis for classification purposes.
+
+![Best Gen Models](images/best_gen_models.png)
 
 ### What is the optimal proportion of synthetic data to mix with real data during training?
 
@@ -358,8 +394,24 @@ From the heatmap, it can be observed that none of the generative metrics show st
 Interestingly, FID shows a weak negative correlation with specificity (-0.18) and a small positive correlation with recall (0.14), meaning that lower FID (typically indicating better generative quality) might slightly correspond to higher recall but is not a reliable predictor. Similarly, SAM_mean has small positive and negative correlations with specificity (0.17) and recall (-0.08), respectively—again reflecting minimal influence.
 
 These results suggest that traditional generative quality metrics such as FID and SAM may not fully capture the aspects of synthetic hyperspectral image quality that impact downstream classification. It’s possible that these metrics emphasize spectral or statistical similarity, whereas classification performance depends more on class-relevant features and the diversity of the generated samples. Consequently, future work might explore domain-specific evaluation methods or task-aware generative metrics to better assess whether synthetic hyperspectral data contribute meaningfully to classifier improvement.
-
 ![Gen vs Class](images/correlation_gen_cls.png)
+
+### Can synthetic data substitute this dataset for melanoma classification?
+
+To determine whether synthetic hyperspectral images could replace real lesions during classifier training, we conducted two complementary tests. In the first, the model was trained entirely on synthetic melanoma (MM) and dysplastic nevi (DN) samples and evaluated on real images. In the second, the model was trained only on real data and validated on synthetic lesions. For both directions, we controlled the class proportions, testing a balanced MM/DN split and a realistic ratio with twice as many DN samples. By doing so, we assessed both the representational quality of synthetic lesions and their ability to mimic the natural imbalance seen in our real dataset.
+
+| ID | Train On  | Val On    | Synth MM | Synth DN | F1     | Specificity  |
+|----|-----------|-----------|----------|----------|--------|--------------|
+| 1  | Synthetic | Real      | 100      | 100      | 0.8215 | 0.7143       |
+| 2  | Synthetic | Real      | 50       | 100      | 0.8235 | 0.2142       |
+| 3  | Real      | Synthetic | 100      | 100      | 0.7980 | 0.81         |
+| 4  | Real      | Synthetic | 100      | 100      | 0.8722 | 0.5          |
+
+Training exclusively on synthetic data resulted in F1-scores just above 0.82, with balanced synthetic datasets yielding much stronger specificity than the imbalanced ones. The synthetic-imitation of real imbalance produced severe losses in specificity, suggesting that synthetic DN samples do not yet approximate the complexity of real dysplastic nevi.
+The reverse experiment, training on real images and validating on synthetic ones, showed good performance, with F1 values up to 0.8722, confirming that synthetic images encode recognizable melanoma and DN patterns. However, variation in specificity suggests that synthetic lesions simplify some aspects of real spectral signatures, and thus cannot reflect the full range of biological diversity.
+
+Therefore, the combined evidence shows that synthetic data is useful and informative, but cannot fully substitute real hyperspectral dermoscopy images for melanoma classification. Synthetic lesions support generalization and capture key spectral structures, but their reduced variability and class-dependent inconsistencies limit their ability to replace real datasets. They function best as a complement, not as a replacement.
+
 # Limitations
 Our approach is limited by the small size and narrow diversity of the available hyperspectral melanoma dataset. Because the training set contains relatively few examples,  with limited variation in lesion shape, texture, and spectral patterns, the generative models end up learning a restricted and more specific distribution. As a result, the synthetic images tend to replicate the biases present in the training set rather than representing the broader variability of real-world skin lesions true distribution of our class.
 
@@ -378,9 +430,23 @@ Future improvements to this project can focus on enhancing spectral realism expe
 
 - Apply explainability methods to hyperspectral classifiers: Using techniques such as Grad-CAM, Integrated Gradients, or spectral relevance maps can reveal which wavelengths are most important for melanoma classification. This may show whether hyperspectral imaging provides diagnostic information not captured by RGB and whether synthetic images preserve these important spectral cues.
 
-# Conclusion
+<!-- # Conclusion
 Our results show that classifiers trained with synthetic hyperspectral data perform better than those relying only on standard data augmentation or regularization. Adding GAN-generated melanoma images helped the models generalize better and improved sensitivity, especially for underrepresented classes. We also found that architectures built for high-resolution image generation, like FastGAN, work better than those designed specifically for hyperspectral synthesis—likely because our dataset has higher spatial resolution (256×256) and fewer spectral channels than typical HSI data. Overall, GANs outperformed VAEs on small, high-resolution datasets, producing sharper and more realistic lesion details.
-Next, we plan to test classification models trained purely on synthetic data against real samples, use large RGB skin lesion datasets to generate more diverse images, and explore CycleGAN and pretraining strategies to improve realism. Conditioning FastGAN on RGB images or binary masks may also help control lesion structure and further boost the quality of generated hyperspectral data.
+Next, we plan to test classification models trained purely on synthetic data against real samples, use large RGB skin lesion datasets to generate more diverse images, and explore CycleGAN and pretraining strategies to improve realism. Conditioning FastGAN on RGB images or binary masks may also help control lesion structure and further boost the quality of generated hyperspectral data. -->
+
+
+# Conclusion
+
+Our experiments demonstrate that synthetic hyperspectral data does help improve melanoma classification, especially when the available real dataset is small. Across multiple architectures and training setups, adding synthetic melanoma images consistently improved validation F1-score, recall, and balanced accuracy compared to training with real data alone. This confirms our main hypothesis, which is classifiers benefit from a combination of real and synthetic hyperspectral samples.
+
+Regarding RGB information, our results show that conditioning the generative models on RGB images did not yield better classifiers than unconditioned hyperspectral generation. SPADE FastGAN and CycleGAN, guided by RGB performed similarly or worse than the unconditioned FastGAN. This suggests that RGB images do not provide additional useful cues for hyperspectral synthesis in this specific task.
+
+Similarly, using a classifier pretrained on large-scale RGB datasets (ImageNet) or on RGB melanoma images (ISIC) did not lead to substantial improvements over training from scratch. Although pretrained models converged faster, they did not surpass the DenseNet201 trained directly on hyperspectral data augmented with synthetic samples. This indicates that RGB-based pretraining does not transfer effectively to hyperspectral melanoma classification, likely due to modality mismatch.
+
+Among all generative models tested, FastGAN produced the best synthetic hyperspectral data, while the best real-data baseline model was DenseNet201 trained without any synthetic augmentation. Importantly, we observed that classification performance was not correlated with any evaluation metric. In addition, the generation model producing the highest-fidelity images was not the most useful ones, meaning that it did not yield the best classifier. Laslty, synthetic data is useful and informative, but cannot fully substitute real hyperspectral dermoscopy images for melanoma classification.
+
+Finally, our results show that it is possible to improve a melanoma classifier even with very limited real hyperspectral data, using synthetic data from generative models that are able to produce high-fidelity and useful images, reinforcing the promise of generative models as a strategy for data augmentation in hyperspectral medical imaging. 
+
 
 
 ## Bibliographic References
