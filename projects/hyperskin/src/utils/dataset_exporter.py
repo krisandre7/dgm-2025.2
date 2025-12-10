@@ -305,9 +305,6 @@ class DatasetExporter:
         self, data: np.ndarray, bands: Optional[list[int]]
     ) -> np.ndarray:
         """Convert data to RGB format."""
-        #if self.data_type == "rgb":
-        #    return data  # Already RGB
-
         # Hyperspectral to RGB conversion
         if bands is None:
             band_data = np.mean(data, axis=2, keepdims=True)

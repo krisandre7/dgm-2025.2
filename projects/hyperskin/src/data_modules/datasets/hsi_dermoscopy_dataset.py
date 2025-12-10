@@ -327,7 +327,7 @@ class HSIDermoscopyDataset(Dataset):
             sample.synthetic_label = torch.tensor(int(self.is_synthetic), dtype=torch.long)
 
         if self.task_config.return_mask:
-            sample.mask = mask
+            sample.mask = mask.long()
 
         return sample.to_dict()
 
