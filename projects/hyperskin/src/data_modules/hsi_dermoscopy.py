@@ -38,8 +38,8 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
     def __init__(
         self,
         task: str | TaskConfig,
-        train_val_test_split: tuple[int, int, int] | tuple[float, float, float],
         batch_size: int,
+        train_val_test_split: Optional[tuple[int, int, int] | tuple[float, float, float]] = None,
         num_workers: int = 8,
         pin_memory: bool = False,
         data_dir: str = "data/hsi_dermoscopy",
@@ -60,6 +60,8 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
         sampling_random_state: int = 42,
         synth_mode: Optional[str] ='mixed_train', #full_train, full_val, mixed_train, None
         synth_ratio: float = 1.0,  # only used if synth_mode is mixed_train
+        num_folds: Optional[int] = 5,
+        current_fold: Optional[int] = None,
         **kwargs,
     ):
         """
@@ -86,6 +88,8 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
             global_min=global_min,
             range_mode=range_mode,
             normalize_mask_tanh=normalize_mask_tanh,
+            num_folds=num_folds,
+            current_fold=current_fold,
         )
 
         # Normalize dict -> TaskConfig
@@ -122,6 +126,8 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
                 "sampling_random_state": sampling_random_state,
                 "synth_mode": synth_mode,
                 "synth_ratio": synth_ratio,
+                "num_folds": num_folds,
+                "current_fold": current_fold,
             }
         )
 
@@ -719,6 +725,10 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
 
         tags = ["hsi_dermoscopy"]
         run_name = "hsi_"
+        
+        if self.hparams.num_folds is not None and self.hparams.current_fold is not None:
+            tags.append(f"fold{self.hparams.current_fold}of{self.hparams.num_folds}")
+            run_name += f"fold{self.hparams.current_fold}of{self.hparams.num_folds}_"
 
         if hasattr(hparams, "data_dir") and "crop" in (
             hparams.data_dir.lower()

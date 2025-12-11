@@ -47,15 +47,15 @@ HSI_TASK_CONFIGS = {
         return_label=True, label_mapping=FULL_LABELS_MAP
     ),
     "classification_melanoma_vs_others": TaskConfig(
-        return_label=True, label_mapping={"melanoma": 0, "others": 1}, binary_classification=True
+        return_label=True, label_mapping={"melanoma": 1, "others": 0}, binary_classification=True
     ),
     "classification_melanoma_vs_dysplastic_vs_others": TaskConfig(
         return_label=True,
-        label_mapping={"melanoma": 0, "dysplastic_nevi": 1, "others": 2},
+        label_mapping={"melanoma": 1, "dysplastic_nevi": 0, "others": 2},
     ),
     "classification_melanoma_vs_dysplastic_nevi": TaskConfig(
         return_label=True,
-        label_mapping={"melanoma": 0, "dysplastic_nevi": 1},
+        label_mapping={"melanoma": 1, "dysplastic_nevi": 0},
         binary_classification=True,
         filter_classes=["melanoma", "dysplastic_nevi"],
     ),
@@ -77,7 +77,7 @@ HSI_TASK_CONFIGS = {
     ),
     "generation": TaskConfig(return_image=True,
                              binary_classification=True,
-                             label_mapping={"melanoma": 0, "dysplastic_nevi": 1},
+                             label_mapping={"melanoma": 1, "dysplastic_nevi": 0},
                              filter_classes=["melanoma", "dysplastic_nevi"]
                              ),
 }
