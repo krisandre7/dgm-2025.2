@@ -187,7 +187,7 @@ class MILK10kDataset(Dataset):
         row = self.data.iloc[idx]
 
         if self.task_config.binary_classification:
-            return 0 if row["MEL"] == 1 else 1
+            return 1 if row["MEL"] == 1 else 0
         else:
             return row[self.class_codes].astype(float).values
 

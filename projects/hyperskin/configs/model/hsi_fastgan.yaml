@@ -81,15 +81,15 @@ trainer:
         auto_insert_metric_name: false
         every_n_train_steps: 600 
     # # # https://lightning.ai/docs/pytorch/latest/api/lightning.pytorch.callbacks.EarlyStopping.html#lightning.pytorch.callbacks.EarlyStopping
-    # - class_path: EarlyStopping
-    #   init_args:
-    #     monitor: val/SAM
-    #     min_delta: 0.01
-    #     patience: 200
-    #     verbose: true
-    #     mode: min
-    #     strict: true
-    #     check_on_train_epoch_end: False
+    - class_path: callbacks.InfiniteTrainEarlyStopping
+      init_args:
+        monitor: val/FID
+        min_delta: 0.01
+        patience: 16
+        check_every_n_steps: ${model.init_args.val_check_interval}
+        verbose: true
+        mode: min
+        strict: true
     # https://lightning.ai/docs/pytorch/latest/api/lightning.pytorch.callbacks.LearningRateMonitor.html#lightning.pytorch.callbacks.LearningRateMonitor
     # - class_path: LearningRateMonitor
     #   init_args:

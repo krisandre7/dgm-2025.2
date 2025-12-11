@@ -88,8 +88,8 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
             global_min=global_min,
             range_mode=range_mode,
             normalize_mask_tanh=normalize_mask_tanh,
-            num_folds=num_folds,
-            current_fold=current_fold,
+            num_folds=int(num_folds),
+            current_fold=int(current_fold),
         )
 
         # Normalize dict -> TaskConfig
@@ -374,8 +374,7 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
     ) -> torch.utils.data.Subset:
         """Create subset from ConcatDataset using global indices."""
         return torch.utils.data.Subset(concat_dataset, indices)
-    
- 
+
     def stratify_synthetic_data(self, synthetic_dataset) -> np.ndarray:
         """
         Return a numpy array of indices selecting a stratified subset of the
@@ -725,7 +724,7 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
 
         tags = ["hsi_dermoscopy"]
         run_name = "hsi_"
-        
+
         if self.hparams.num_folds is not None and self.hparams.current_fold is not None:
             tags.append(f"fold{self.hparams.current_fold}of{self.hparams.num_folds}")
             run_name += f"fold{self.hparams.current_fold}of{self.hparams.num_folds}_"
