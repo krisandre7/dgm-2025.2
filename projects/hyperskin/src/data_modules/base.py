@@ -37,8 +37,8 @@ class BaseDataModule:
         in_channels: int = 3,
         range_mode: str = "0_1",
         normalize_mask_tanh: bool = False,
-        num_folds: Optional[int] = None,
-        current_fold: Optional[int] = 5,
+        num_folds: Optional[int] = 5,
+        current_fold: Optional[int] = None,
         **kwargs,
     ):
         super().__init__()
@@ -49,18 +49,19 @@ class BaseDataModule:
         self.data_dir = Path(data_dir)
         self.allowed_labels = allowed_labels
         self.google_drive_id = google_drive_id
-        
+
         # --- K-Fold configuration ---
         self.num_folds = num_folds
         self.current_fold = current_fold
 
-        if self.num_folds is not None:
-            if self.current_fold is None:
-                raise ValueError("If num_folds is set, current_fold must be provided.")
+        if self.train_val_test_split is None and self.current_fold is not None:
+            if self.num_folds is None:
+                raise ValueError("If current_fold is set, num_folds must be provided.")
             if self.current_fold >= self.num_folds:
                 raise ValueError(f"current_fold ({current_fold}) must be < num_folds ({num_folds})")
-        
-        if self.num_folds is None and self.train_val_test_split is None:
+        elif self.train_val_test_split is not None and self.current_fold is not None:
+            raise ValueError("Only one of train_val_test_split or current_fold should be provided.")
+        elif self.current_fold is None and self.train_val_test_split is None:
             raise ValueError("Either train_val_test_split or num_folds must be provided.")
 
 
@@ -386,7 +387,7 @@ class BaseDataModule:
         - train_val_test_split ratios are IGNORED here.
         """
         print(f"🔄 Setting up K-Fold Split ({self.current_fold}/{self.num_folds})...")
-        
+
         indices, labels = self.get_dataset_indices_and_labels()
         indices, labels = self._filter_and_remap_indices(indices, labels, self.allowed_labels)
 
@@ -450,17 +451,16 @@ class BaseDataModule:
 
     def ensure_splits_exist(self):
         """Decides which split strategy to use based on configuration."""
-        
-        if self.num_folds is not None:
+        if self.current_fold is not None:
             # --- K-FOLD PATH ---
-            if self.load_kfold_splits_from_disk():
-                return
+            # if self.load_kfold_splits_from_disk():
+            #     return
             self.setup_kfold_splits()
             self.save_kfold_splits_to_disk()
         else:
             # --- STANDARD PATH (Original) ---
-            if self.load_splits_from_disk():
-                return
+            # if self.load_splits_from_disk():
+            #     return
             print("Generating new standard data splits...")
             self.setup_splits()
             self.save_splits_to_disk()

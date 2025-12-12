@@ -746,6 +746,7 @@ class FastGANModule(BasePredictorMixin, pl.LightningModule):
                 },
                 prog_bar=True,
                 sync_dist=True,
+                on_step=True,
             )
 
         fig = self.spectra_metric.plot()
