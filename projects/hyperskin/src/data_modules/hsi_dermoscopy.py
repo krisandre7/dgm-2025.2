@@ -62,6 +62,7 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
         synth_ratio: float = 1.0,  # only used if synth_mode is mixed_train
         num_folds: Optional[int] = 5,
         current_fold: Optional[int] = None,
+        filter_channels: Optional[list[int]] = None,
         **kwargs,
     ):
         """
@@ -128,6 +129,7 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
                 "synth_ratio": synth_ratio,
                 "num_folds": num_folds,
                 "current_fold": current_fold,
+                "filter_channels": filter_channels,
             }
         )
 
@@ -144,7 +146,8 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
         self,
     ) -> tuple[np.ndarray, np.ndarray]:
         full_dataset = HSIDermoscopyDataset(
-            task=self.hparams.task, data_dir=self.hparams.data_dir
+            task=self.hparams.task, data_dir=self.hparams.data_dir,
+            filter_channels=self.hparams.filter_channels
         )
         indices = np.arange(len(full_dataset))
         labels = (
@@ -469,6 +472,7 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
                 task=self.hparams.task,
                 data_dir=self.hparams.data_dir,
                 transform=self.transforms_train,
+                filter_channels=self.hparams.filter_channels
             )
             self.data_train = torch.utils.data.Subset( #aqui acontece a subdivisão dos dados só de treino
                 self.data_train, self.train_indices
@@ -478,6 +482,7 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
                 task=self.hparams.task,
                 data_dir=self.hparams.data_dir,
                 transform=self.transforms_val,
+                filter_channels=self.hparams.filter_channels
             )
             self.data_val = torch.utils.data.Subset(
                 self.data_val, self.val_indices
@@ -490,6 +495,7 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
                     data_dir=self.hparams.synthetic_data_dir,
                     transform=self.transforms_train,
                     is_synthetic=True,
+                    filter_channels=self.hparams.filter_channels
                 )
 
                 # quantos dados sintéticos vamos usar NÃO COLOCAR 0
@@ -538,6 +544,7 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
                 task=self.hparams.task,
                 data_dir=self.hparams.data_dir,
                 transform=self.transforms_test,
+                filter_channels=self.hparams.filter_channels
             )
             self.data_test = torch.utils.data.Subset(
                 self.data_test, self.test_indices
@@ -724,6 +731,11 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
 
         tags = ["hsi_dermoscopy"]
         run_name = "hsi_"
+
+            # Add filtered channels to tags/name if present
+        if self.hparams.filter_channels is not None:
+             run_name += "filteredch_"
+             tags.append("filtered_channels")
 
         if self.hparams.num_folds is not None and self.hparams.current_fold is not None:
             tags.append(f"fold{self.hparams.current_fold}of{self.hparams.num_folds}")

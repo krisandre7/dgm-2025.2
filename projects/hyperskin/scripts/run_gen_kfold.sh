@@ -11,6 +11,7 @@
 #   - GNU `timeout` utility available on system.
 
 set -e  # Stop on first error
+trap "echo '🛑 Script interrupted by user. Exiting...'; exit 130" SIGINT
 
 NUM_FOLDS="${1:-5}"  # Default to 5 folds if not provided
 TIME_LIMIT="2h"      # Timeout for each experiment
@@ -32,32 +33,36 @@ declare -a EXPERIMENTS=(
   "python src/main.py fit \
     -c configs/data/hsi_dermoscopy_croppedv2_gan.yaml \
     -c configs/model/hsi_fastgan.yaml \
-    --data.init_args.allowed_labels='[\"melanoma\"]'"
+    --data.init_args.allowed_labels='[\"melanoma\"]' \
+    __FOLD_PLACEHOLDER__"
 
   # FASTGAN: Dysplastic Nevi
   "python src/main.py fit \
     -c configs/data/hsi_dermoscopy_croppedv2_gan.yaml \
     -c configs/model/hsi_fastgan.yaml \
-    --data.init_args.allowed_labels='[\"dysplastic_nevi\"]'"
+    --data.init_args.allowed_labels='[\"dysplastic_nevi\"]' \
+    __FOLD_PLACEHOLDER__"
 
   # CYCLEGAN: Dysplastic Nevi ↔ Melanocytic Nevus
   "python src/main.py fit \
     -c configs/data/joint_rgb_hsi_dermoscopy.yaml \
     -c configs/model/hsi_cycle_gan.yaml \
     --data.init_args.hsi_config.allowed_labels='[\"dysplastic_nevi\"]' \
-    --data.init_args.rgb_config.allowed_labels='[\"melanocytic_nevus\"]'"
+    --data.init_args.rgb_config.allowed_labels='[\"melanocytic_nevus\"]' \
+    __FOLD_PLACEHOLDER__"
 
   # CYCLEGAN: Melanoma ↔ Melanoma
   "python src/main.py fit \
     -c configs/data/joint_rgb_hsi_dermoscopy.yaml \
     -c configs/model/hsi_cycle_gan.yaml \
     --data.init_args.hsi_config.allowed_labels='[\"melanoma\"]' \
-    --data.init_args.rgb_config.allowed_labels='[\"melanoma\"]'"
+    --data.init_args.rgb_config.allowed_labels='[\"melanoma\"]' \
+    __FOLD_PLACEHOLDER__"
 )
 
 # Loop through experiments and folds
 for (( exp_idx=0; exp_idx<${#EXPERIMENTS[@]}; exp_idx++ )); do
-  EXP_CMD="${EXPERIMENTS[$exp_idx]}"
+  EXP_CMD_TEMPLATE="${EXPERIMENTS[$exp_idx]}"
   EXP_NAME="exp$((exp_idx+1))"
 
   echo "==========================================================="
@@ -65,11 +70,23 @@ for (( exp_idx=0; exp_idx<${#EXPERIMENTS[@]}; exp_idx++ )); do
   echo "==========================================================="
 
   for (( fold=0; fold<NUM_FOLDS; fold++ )); do
-    RUN_ID="${BASE_RUN_ID}_fold${fold}"
+    RUN_ID="${BASE_RUN_ID}_${EXP_NAME}_fold${fold}"
     echo "-------- Running fold ${fold} for ${EXP_NAME} (Run ID: ${RUN_ID}) --------"
 
+    # Use the correct fold argument depending on the experiment type
+    if [[ "$EXP_NAME" == "exp1" || "$EXP_NAME" == "exp2" ]]; then
+      # FASTGAN experiments
+      FOLD_ARG="--data.init_args.current_fold=${fold}"
+    else
+      # CYCLEGAN experiments
+      FOLD_ARG="--data.init_args.rgb_config.current_fold=${fold}"
+    fi
+
+    # Build actual command
+    EXP_CMD="${EXP_CMD_TEMPLATE/__FOLD_PLACEHOLDER__/$FOLD_ARG}"
+
     # Execute experiment with timeout to auto-kill after 2 hours
-    if timeout "$TIME_LIMIT" bash -c "${EXP_CMD} --data.init_args.current_fold=${fold} --trainer.logger.init_args.id=${RUN_ID}"; then
+    if timeout "$TIME_LIMIT" bash -c "${EXP_CMD} --trainer.logger.init_args.id=${RUN_ID}"; then
       echo "✅ Completed ${EXP_NAME}, fold ${fold}"
     else
       STATUS=$?
