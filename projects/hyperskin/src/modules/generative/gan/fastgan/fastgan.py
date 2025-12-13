@@ -673,9 +673,9 @@ class FastGANModule(BasePredictorMixin, pl.LightningModule):
         self.rase.reset()
         self.ssim.reset()
         self.tv.reset()
-
-        self.precision_recall.real_features = []
-        self.precision_recall.fake_features = []
+        self.precision_recall.reset()
+        # self.precision_recall.real_features = []
+        # self.precision_recall.fake_features = []
         # self.real_pr_features = []
         # self.fake_pr_features = []
 
@@ -721,11 +721,12 @@ class FastGANModule(BasePredictorMixin, pl.LightningModule):
                 fake_norm = fake_norm.clamp(0, 1)
                 real_norm = real_norm.clamp(0, 1)
 
-                # real_pr = real_norm * 2 - 1
-                # fake_pr = fake_norm * 2 - 1
+
 
                 self.precision_recall.update(real_norm, fake=False)
                 self.precision_recall.update(fake_norm, fake=True)
+                # real_pr = real_norm * 2 - 1
+                # fake_pr = fake_norm * 2 - 1
 
                 # real_feat = self.pr_inception(real_norm).detach().cpu()
                 # fake_feat = self.pr_inception(fake_norm).detach().cpu()
