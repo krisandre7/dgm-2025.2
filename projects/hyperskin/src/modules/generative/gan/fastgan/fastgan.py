@@ -19,6 +19,7 @@ from src.losses.lpips import PerceptualLoss
 from src.losses.spectral import SpectralConsistencyLoss
 from src.metrics.image_precision_recall import ImagePrecisionRecallMetric
 from src.metrics.precision_recall_metric import compute_knn_precision_recall
+from src.metrics.SID_metric import SIDMetric
 from src.metrics.inception import InceptionV3Wrapper
 from src.models.fastgan.fastgan import Generator, weights_init
 from src.models.timm import TIMMModel
@@ -227,6 +228,7 @@ class FastGANModule(BasePredictorMixin, pl.LightningModule):
         self.rase = RelativeAverageSpectralError()
         self.ssim = StructuralSimilarityIndexMeasure(data_range=1.0)
         self.tv = TotalVariation()
+        self.sid_metric = SIDMetric()
 
         self.inception_model = InceptionV3Wrapper(normalize_input=False, in_chans=self.hparams.nc)
         self.inception_model.eval()
@@ -236,7 +238,7 @@ class FastGANModule(BasePredictorMixin, pl.LightningModule):
         )
         self.precision_recall = ImagePrecisionRecallMetric(
             feature_extractor=self.inception_model,  # same as FID backbone
-            k=3
+            k=10
         )
         self.precision_recall.feature_extractor.eval() 
         # self.real_pr_features = []
@@ -674,10 +676,7 @@ class FastGANModule(BasePredictorMixin, pl.LightningModule):
         self.ssim.reset()
         self.tv.reset()
         self.precision_recall.reset()
-        # self.precision_recall.real_features = []
-        # self.precision_recall.fake_features = []
-        # self.real_pr_features = []
-        # self.fake_pr_features = []
+
 
         val_loader = self.trainer.datamodule.train_dataloader()
 
@@ -725,14 +724,7 @@ class FastGANModule(BasePredictorMixin, pl.LightningModule):
 
                 self.precision_recall.update(real_norm, fake=False)
                 self.precision_recall.update(fake_norm, fake=True)
-                # real_pr = real_norm * 2 - 1
-                # fake_pr = fake_norm * 2 - 1
 
-                # real_feat = self.pr_inception(real_norm).detach().cpu()
-                # fake_feat = self.pr_inception(fake_norm).detach().cpu()
-
-                # self.real_pr_features.append(real_feat)
-                # self.fake_pr_features.append(fake_feat)
 
                 eps = 1e-8
                 fake_norm_clamped = fake_norm.clamp(eps, 1.0)
@@ -790,7 +782,20 @@ class FastGANModule(BasePredictorMixin, pl.LightningModule):
         # recall = pr_result["recall"]
         self.log("val/precision", precision, prog_bar=True, sync_dist=True, on_step=True)
         self.log("val/recall", recall, prog_bar=True, sync_dist=True, on_step=True)
+        #calculando o sid
+        stats = self.spectra_metric.compute()
+        sid_results = self.sid_metric.compute(stats)
 
+        for cls_name, sid_value in sid_results.items():
+            self.log(
+                f"val/SID_{cls_name}",
+                sid_value,
+                prog_bar=True,
+                sync_dist=True,
+                on_step=True,
+            )
+
+            
         fig = self.spectra_metric.plot()
         if fig is not None and hasattr(self.logger, "experiment") and self.logger.experiment is not None:
             self.logger.experiment.log({"Mean Spectra": wandb.Image(fig)})
