@@ -74,6 +74,13 @@ trainer:
         verbose: true
         mode: min
         strict: true
+    - class_path: callbacks.MetricThresholdGenerationCallback
+      init_args:
+        monitor: val/FID
+        thresholds: [400, 300, 250, 200, 150, 100]
+        num_samples: 100
+        mode: min
+        output_dir: threshold_samples
     # https://lightning.ai/docs/pytorch/latest/api/lightning.pytorch.callbacks.LearningRateMonitor.html#lightning.pytorch.callbacks.LearningRateMonitor
     # - class_path: LearningRateMonitor
     #   init_args:
