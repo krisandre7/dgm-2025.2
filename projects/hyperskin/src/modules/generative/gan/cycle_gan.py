@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List, Union
 
 from matplotlib.pyplot import isinteractive
 import pytorch_lightning as pl
@@ -27,6 +27,10 @@ from torchmetrics.image.fid import FrechetInceptionDistance
 
 from src.losses.lpips import PerceptualLoss
 from src.metrics.inception import InceptionV3Wrapper
+# --- Added Imports ---
+from src.metrics.image_precision_recall import ImagePrecisionRecallMetric
+from src.metrics.SID_metric import SIDMetric
+# ---------------------
 from skimage import filters
 
 from src.modules.generative.base_predictor import BasePredictorMixin
@@ -134,15 +138,26 @@ class CycleGANModule(BasePredictorMixin, pl.LightningModule):
         self.ssim = StructuralSimilarityIndexMeasure(data_range=1.0)
         self.tv = TotalVariation()
 
+        # SID Metric
+        self.sid_metric = SIDMetric()
+
         self.inception_model = InceptionV3Wrapper(
             normalize_input=False, in_chans=hsi_channels
         )
         self.inception_model.eval()
+
         self.fid = FrechetInceptionDistance(
             self.inception_model,
             input_img_size=(hsi_channels, self.hparams.image_size, self.hparams.image_size),
         )
         self.fid.eval()
+
+        # Precision/Recall Metric
+        self.precision_recall = ImagePrecisionRecallMetric(
+            feature_extractor=self.inception_model,  # reuse the inception backbone
+            k=10
+        )
+        self.precision_recall.feature_extractor.eval()
 
         self.spectra_metric = MeanSpectraMetric()
         self.batch_size = None
@@ -631,6 +646,7 @@ class CycleGANModule(BasePredictorMixin, pl.LightningModule):
         self.rase.reset()
         self.ssim.reset()
         self.tv.reset()
+        self.precision_recall.reset()
 
         val_loader = self.trainer.datamodule.all_dataloader()
 
@@ -664,6 +680,10 @@ class CycleGANModule(BasePredictorMixin, pl.LightningModule):
                 # Update FID
                 self.fid.update(fake_hsi, real=False)
                 self.fid.update(real_hsi, real=True)
+
+                # Update Precision/Recall
+                self.precision_recall.update(real_norm, fake=False)
+                self.precision_recall.update(fake_norm, fake=True)
 
                 # Compute metrics
                 eps = 1e-8
@@ -716,6 +736,25 @@ class CycleGANModule(BasePredictorMixin, pl.LightningModule):
                 logger=True,
                 on_step=True,
             )
+
+            # Compute Precision Recall
+            pr_result = self.precision_recall.compute()
+            precision = pr_result["precision"]
+            recall = pr_result["recall"]
+            self.log("val/precision", precision, prog_bar=True, sync_dist=True, on_step=True)
+            self.log("val/recall", recall, prog_bar=True, sync_dist=True, on_step=True)
+
+            # Compute SID
+            stats = self.spectra_metric.compute()
+            sid_results = self.sid_metric.compute(stats)
+            for cls_name, sid_value in sid_results.items():
+                self.log(
+                    f"val/SID_{cls_name}",
+                    sid_value,
+                    prog_bar=True,
+                    sync_dist=True,
+                    on_step=True,
+                )
 
         fig = self.spectra_metric.plot()
         if fig is not None and hasattr(self.logger, "experiment"):
