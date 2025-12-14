@@ -9,7 +9,7 @@ model:
     label_smoothing: 0.2
     noise_decay_steps: 12000
     # noise_std: 0.0
-    noise_std_start: 0.5
+    noise_std_start: 0
     noise_std_end: 0
     num_val_batches: 8
     log_images_on_step_n: 100
@@ -64,16 +64,23 @@ trainer:
         mode: min
         auto_insert_metric_name: false
         every_n_train_steps: 800
-    # # # https://lightning.ai/docs/pytorch/latest/api/lightning.pytorch.callbacks.EarlyStopping.html#lightning.pytorch.callbacks.EarlyStopping
-    # - class_path: EarlyStopping
-    #   init_args:
-    #     monitor: val/SAM
-    #     min_delta: 0.01
-    #     patience: 200
-    #     verbose: true
-    #     mode: min
-    #     strict: true
-    #     check_on_train_epoch_end: False
+    # https://lightning.ai/docs/pytorch/latest/api/lightning.pytorch.callbacks.EarlyStopping.html#lightning.pytorch.callbacks.EarlyStopping
+    - class_path: callbacks.InfiniteTrainEarlyStopping
+      init_args:
+        monitor: val/FID
+        min_delta: 0.01
+        patience: 16
+        check_every_n_steps: ${model.init_args.val_check_interval}
+        verbose: true
+        mode: min
+        strict: true
+    - class_path: callbacks.MetricThresholdGenerationCallback
+      init_args:
+        monitor: val/FID
+        thresholds: [400, 300, 250, 200, 150, 100]
+        num_samples: 100
+        mode: min
+        output_dir: threshold_samples
     # https://lightning.ai/docs/pytorch/latest/api/lightning.pytorch.callbacks.LearningRateMonitor.html#lightning.pytorch.callbacks.LearningRateMonitor
     # - class_path: LearningRateMonitor
     #   init_args:

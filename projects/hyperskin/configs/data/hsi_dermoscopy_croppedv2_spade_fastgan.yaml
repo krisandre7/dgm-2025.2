@@ -4,7 +4,7 @@ data:
     task: 
       return_image: True
       return_mask: False
-      return_label: False
+      return_label: True
       binary_classification: True
       label_mapping:
         melanoma: 1
@@ -17,10 +17,9 @@ data:
       "melanoma", 
       # "dysplastic_nevi"
     ]
-    # train_val_test_split: [0.7, 0.15, 0.15]
-    current_fold: 0
+    train_val_test_split: [0.7, 0.15, 0.15]
     image_size: 256
-    batch_size: 32
+    batch_size: 16
     num_workers: 8
     pin_memory: True
     data_dir: data/hsi_dermoscopy_croppedv2_256_with_masks

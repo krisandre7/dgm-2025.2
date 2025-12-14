@@ -5,7 +5,7 @@ from typing import Optional, Any
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedKFold
 import gdown
 import albumentations as A
 import pytorch_lightning as pl
@@ -26,8 +26,8 @@ class BaseDataModule:
 
     def __init__(
         self,
-        train_val_test_split: tuple[int, int, int] | tuple[float, float, float],
         data_dir: str,
+        train_val_test_split: Optional[tuple[int, int, int] | tuple[float, float, float]] = None,
         allowed_labels: Optional[list[int | str]] = None,
         google_drive_id: Optional[str] = None,
         transforms: Optional[dict[str, list[dict[str, Any]]]] = None,
@@ -37,6 +37,8 @@ class BaseDataModule:
         in_channels: int = 3,
         range_mode: str = "0_1",
         normalize_mask_tanh: bool = False,
+        num_folds: Optional[int] = 5,
+        current_fold: Optional[int] = None,
         **kwargs,
     ):
         super().__init__()
@@ -47,6 +49,21 @@ class BaseDataModule:
         self.data_dir = Path(data_dir)
         self.allowed_labels = allowed_labels
         self.google_drive_id = google_drive_id
+
+        # --- K-Fold configuration ---
+        self.num_folds = num_folds
+        self.current_fold = current_fold
+
+        if self.train_val_test_split is None and self.current_fold is not None:
+            if self.num_folds is None:
+                raise ValueError("If current_fold is set, num_folds must be provided.")
+            if self.current_fold >= self.num_folds:
+                raise ValueError(f"current_fold ({current_fold}) must be < num_folds ({num_folds})")
+        elif self.train_val_test_split is not None and self.current_fold is not None:
+            raise ValueError("Only one of train_val_test_split or current_fold should be provided.")
+        elif self.current_fold is None and self.train_val_test_split is None:
+            raise ValueError("Either train_val_test_split or num_folds must be provided.")
+
 
         # --- normalization params ---
         self.global_max = global_max
@@ -361,12 +378,92 @@ class BaseDataModule:
             return True
         return False
 
+    def setup_kfold_splits(self, seed: int = 42) -> None:
+        """
+        Setup K-Fold splits.
+        - Uses ALL available data for K-Fold.
+        - Split N is the Validation set for the current fold.
+        - No Test set is created (empty).
+        - train_val_test_split ratios are IGNORED here.
+        """
+        print(f"🔄 Setting up K-Fold Split ({self.current_fold}/{self.num_folds})...")
+
+        indices, labels = self.get_dataset_indices_and_labels()
+        indices, labels = self._filter_and_remap_indices(indices, labels, self.allowed_labels)
+
+        # Filter out classes with too few samples for Stratified K-Fold
+        unique_labels, counts = np.unique(labels, return_counts=True)
+        min_samples = self.num_folds  # We need at least one sample per fold per class
+        valid_labels = unique_labels[counts >= min_samples]
+
+        if len(valid_labels) < len(unique_labels):
+            print(f"⚠️ K-Fold: Dropping classes {set(unique_labels) - set(valid_labels)} (counts < {min_samples})")
+            mask = np.isin(labels, valid_labels)
+            indices, labels = indices[mask], labels[mask]
+
+        # Initialize Stratified K-Fold
+        skf = StratifiedKFold(n_splits=self.num_folds, shuffle=True, random_state=seed)
+        
+        # Generator for splits
+        # skf.split returns indices relative to the provided array
+        fold_generator = skf.split(indices, labels)
+        
+        # Iterate to find the current fold
+        for fold_idx, (train_idx_rel, val_idx_rel) in enumerate(fold_generator):
+            if fold_idx == self.current_fold:
+                # Map relative indices to global dataset indices
+                self.train_indices = indices[train_idx_rel]
+                self.val_indices = indices[val_idx_rel]
+                
+                # NO Test set for K-Fold as requested
+                self.test_indices = np.array([], dtype=int)
+                break
+
+    def save_kfold_splits_to_disk(self, split_dir: Optional[Path] = None):
+        """Saves splits with a fold-specific prefix."""
+        split_dir = split_dir or self.get_split_dir()
+        split_dir.mkdir(parents=True, exist_ok=True)
+        
+        prefix = f"fold_{self.current_fold}_"
+        
+        np.savetxt(split_dir / f"{prefix}train.txt", self.train_indices, fmt="%d")
+        np.savetxt(split_dir / f"{prefix}val.txt", self.val_indices, fmt="%d")
+        # We save the test set with the prefix too, to ensure we know exactly which test set 
+        # was associated with this specific fold run (even if they are identical across folds).
+        np.savetxt(split_dir / f"{prefix}test.txt", self.test_indices, fmt="%d")
+        
+        print(f"Saved K-Fold splits to {split_dir} (Prefix: {prefix})")
+
+    def load_kfold_splits_from_disk(self, split_dir: Optional[Path] = None) -> bool:
+        """Loads splits looking for the fold-specific prefix."""
+        split_dir = split_dir or self.get_split_dir()
+        prefix = f"fold_{self.current_fold}_"
+        
+        files = [split_dir / f"{prefix}{n}" for n in ["train.txt", "val.txt", "test.txt"]]
+        
+        if all(f.exists() for f in files):
+            self.train_indices = np.loadtxt(files[0], dtype=int)
+            self.val_indices = np.loadtxt(files[1], dtype=int)
+            self.test_indices = np.loadtxt(files[2], dtype=int)
+            print(f"Loaded K-Fold splits from {split_dir} (Prefix: {prefix})")
+            return True
+        return False
+
     def ensure_splits_exist(self):
-        # if self.load_splits_from_disk():
-        #     return
-        print("Generating new data splits...")
-        self.setup_splits()
-        self.save_splits_to_disk()
+        """Decides which split strategy to use based on configuration."""
+        if self.current_fold is not None:
+            # --- K-FOLD PATH ---
+            # if self.load_kfold_splits_from_disk():
+            #     return
+            self.setup_kfold_splits()
+            self.save_kfold_splits_to_disk()
+        else:
+            # --- STANDARD PATH (Original) ---
+            # if self.load_splits_from_disk():
+            #     return
+            print("Generating new standard data splits...")
+            self.setup_splits()
+            self.save_splits_to_disk()
 
     # =========================================================================
     # GOOGLE DRIVE DOWNLOAD LOGIC

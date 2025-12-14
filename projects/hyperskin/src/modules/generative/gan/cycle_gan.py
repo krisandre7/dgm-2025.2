@@ -546,12 +546,14 @@ class CycleGANModule(BasePredictorMixin, pl.LightningModule):
             prog_bar=True,
             logger=True,
             sync_dist=torch.cuda.device_count() > 1,
+            on_step=True,
         )
         self.log(
             "train/noise_std",
             self.get_current_noise_std(),
             prog_bar=False,
             logger=True,
+            on_step=True,
         )
 
     def on_train_batch_end(self, outputs, batch, batch_idx):
@@ -711,6 +713,8 @@ class CycleGANModule(BasePredictorMixin, pl.LightningModule):
                 },
                 prog_bar=True,
                 sync_dist=True,
+                logger=True,
+                on_step=True,
             )
 
         fig = self.spectra_metric.plot()

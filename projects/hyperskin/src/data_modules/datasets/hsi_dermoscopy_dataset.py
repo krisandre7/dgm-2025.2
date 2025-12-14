@@ -47,15 +47,15 @@ HSI_TASK_CONFIGS = {
         return_label=True, label_mapping=FULL_LABELS_MAP
     ),
     "classification_melanoma_vs_others": TaskConfig(
-        return_label=True, label_mapping={"melanoma": 0, "others": 1}, binary_classification=True
+        return_label=True, label_mapping={"melanoma": 1, "others": 0}, binary_classification=True
     ),
     "classification_melanoma_vs_dysplastic_vs_others": TaskConfig(
         return_label=True,
-        label_mapping={"melanoma": 0, "dysplastic_nevi": 1, "others": 2},
+        label_mapping={"melanoma": 1, "dysplastic_nevi": 0, "others": 2},
     ),
     "classification_melanoma_vs_dysplastic_nevi": TaskConfig(
         return_label=True,
-        label_mapping={"melanoma": 0, "dysplastic_nevi": 1},
+        label_mapping={"melanoma": 1, "dysplastic_nevi": 0},
         binary_classification=True,
         filter_classes=["melanoma", "dysplastic_nevi"],
     ),
@@ -77,7 +77,7 @@ HSI_TASK_CONFIGS = {
     ),
     "generation": TaskConfig(return_image=True,
                              binary_classification=True,
-                             label_mapping={"melanoma": 0, "dysplastic_nevi": 1},
+                             label_mapping={"melanoma": 1, "dysplastic_nevi": 0},
                              filter_classes=["melanoma", "dysplastic_nevi"]
                              ),
 }
@@ -103,10 +103,16 @@ class HSIDermoscopyDataset(Dataset):
         force_create_df: bool = True,
         save_labels_df: bool = True,
         is_synthetic: bool = False,
+        filter_channels: Optional[list[int]] = None,
     ):
         self.data_dir = Path(data_dir)
         self.transform = transform
         self.is_synthetic = is_synthetic
+        self.filter_channels = filter_channels
+
+        if self.filter_channels is not None:
+            if not all(0 <= c <= 15 for c in self.filter_channels):
+                raise ValueError("Channel indices must be between 0 and 15.")
 
         # Handle task config
         if isinstance(task, str):
@@ -245,6 +251,11 @@ class HSIDermoscopyDataset(Dataset):
         mat_data = loadmat(file_path)
         # loadmat returns dict, get the last item's value (the actual data)
         image = mat_data.popitem()[-1]
+
+        # Apply channel filtering if requested
+        if self.filter_channels is not None:
+            image = image[:, :, self.filter_channels]
+
         return image.astype(np.float32)
 
     def _load_mask(self, idx: int) -> np.ndarray | None:
@@ -327,7 +338,7 @@ class HSIDermoscopyDataset(Dataset):
             sample.synthetic_label = torch.tensor(int(self.is_synthetic), dtype=torch.long)
 
         if self.task_config.return_mask:
-            sample.mask = mask
+            sample.mask = mask.long()
 
         return sample.to_dict()
 

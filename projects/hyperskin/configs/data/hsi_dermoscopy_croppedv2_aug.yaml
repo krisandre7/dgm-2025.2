@@ -2,7 +2,9 @@ data:
   class_path: data_modules.HSIDermoscopyDataModule
   init_args:
     task: CLASSIFICATION_MELANOMA_VS_DYSPLASTIC_NEVI
-    train_val_test_split: [0.7, 0.15, 0.15]
+    # train_val_test_split: [0.7, 0.15, 0.15]
+    current_fold: 4
+    # filter_channels: [0, 1, 2, 3, 4, 5, 6, 7]  # Specify channels to use (None to use all)
     image_size: 224
     batch_size: 8
     num_workers: 8
