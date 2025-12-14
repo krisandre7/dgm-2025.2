@@ -685,6 +685,7 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
             task=self.hparams.task,
             data_dir=self.hparams.data_dir,
             transform=self.transforms_test,
+            filter_channels=self.hparams.filter_channels
         )
 
         indices = np.arange(len(full_dataset))

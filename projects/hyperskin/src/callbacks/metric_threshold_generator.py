@@ -89,14 +89,13 @@ class MetricThresholdGenerationCallback(Callback):
         # --- 1. Setup Folder Name ---
         step = trainer.global_step
 
-        # Get WandB Run ID if available
+        # ... (Same folder setup code as before) ...
         wandb_id = "norun"
         if isinstance(trainer.logger, pl.loggers.WandbLogger):
             wandb_id = trainer.logger.experiment.id
         elif wandb.run is not None:
             wandb_id = wandb.run.id
 
-        # Sanitize metric name for folder path (replace slash with underscore)
         metric_name_clean = self.monitor.replace("/", "_")
         folder_name = f"step={step}_{metric_name_clean}={metric_value:.4f}_{wandb_id}"
 
@@ -109,17 +108,44 @@ class MetricThresholdGenerationCallback(Callback):
         os.makedirs(save_path, exist_ok=True)
 
         # --- 2. EMA Context Manager ---
-        # We need to manually perform the weights swap logic present in your modules
+
+        # Identify the specific generator network to toggle
+        # We avoid toggling the whole pl_module to protect Inception/FID modules
+        target_net = None
+        if hasattr(pl_module, "netG"):
+            target_net = pl_module.netG
+        elif hasattr(pl_module, "G_AB"):
+            target_net = pl_module.G_AB
+        else:
+            # Fallback: toggle module but we must fix Inception later
+            target_net = pl_module
+
+        # Save current mode
+        was_training = target_net.training
+
+        # Swap weights
         backup_params = self._swap_ema_weights(pl_module, to_avg=True)
 
-        pl_module.eval()
+        # Set ONLY the generator to eval
+        target_net.eval()
 
         try:
             self._generate_loop(trainer, pl_module, save_path)
         finally:
-            # Restore original weights and training mode
+            # Restore original weights 
             self._swap_ema_weights(pl_module, to_avg=False, backup_params=backup_params)
-            pl_module.train()
+
+            # Restore training mode ONLY for the generator
+            target_net.train(was_training)
+
+            # SAFEGUARD: If we fell back to toggling pl_module, or just to be safe,
+            # force metric models back to eval
+            if hasattr(pl_module, "inception_model"):
+                pl_module.inception_model.eval()
+            if hasattr(pl_module, "fid"):
+                pl_module.fid.eval()
+            if hasattr(pl_module, "classifier") and pl_module.classifier is not None:
+                pl_module.classifier.eval()
 
     def _generate_loop(self, trainer, pl_module, save_path):
         """

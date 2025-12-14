@@ -80,7 +80,7 @@ trainer:
         mode: min
         auto_insert_metric_name: false
         every_n_train_steps: 600 
-    # # # https://lightning.ai/docs/pytorch/latest/api/lightning.pytorch.callbacks.EarlyStopping.html#lightning.pytorch.callbacks.EarlyStopping
+    # https://lightning.ai/docs/pytorch/latest/api/lightning.pytorch.callbacks.EarlyStopping.html#lightning.pytorch.callbacks.EarlyStopping
     - class_path: callbacks.InfiniteTrainEarlyStopping
       init_args:
         monitor: val/FID
