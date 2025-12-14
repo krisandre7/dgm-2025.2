@@ -79,7 +79,7 @@ for (( exp_idx=0; exp_idx<${#EXPERIMENTS[@]}; exp_idx++ )); do
       FOLD_ARG="--data.init_args.current_fold=${fold}"
     else
       # CYCLEGAN experiments
-      FOLD_ARG="--data.init_args.rgb_config.current_fold=${fold}"
+      FOLD_ARG="--data.init_args.hsi_config.current_fold=${fold}"
     fi
 
     # Build actual command
