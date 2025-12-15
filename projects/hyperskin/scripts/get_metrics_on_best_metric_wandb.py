@@ -113,7 +113,7 @@ def main():
         default=True,
         help="If set, maximize the metric (e.g. F1, accuracy).",
     )
-    parser.add_argument("--no-maximize", dest="maximize", action="store_false")
+    parser.add_argument("--minimize", dest="maximize", action="store_false")
     parser.add_argument(
         "run_ids",
         nargs="*",
@@ -215,6 +215,15 @@ def main():
     print(f"Saving CSV to {args.csv} (sep='{args.separator}', decimal='{args.decimal}')")
     df.to_csv(args.csv, sep=args.separator, decimal=args.decimal, index=False)
     print("✅ CSV saved.")
+
+    # print the mean + std of each metric. skip run_id, run_name, best_step
+    print("\n=== Summary Statistics ===")
+    for col in df.columns:
+        if col in ["run_id", "run_name", "best_step"]:
+            continue
+        mean = df[col].mean()
+        std = df[col].std()
+        print(f"{col}: {mean:.4f} ± {std:.4f}")
 
 
 if __name__ == "__main__":

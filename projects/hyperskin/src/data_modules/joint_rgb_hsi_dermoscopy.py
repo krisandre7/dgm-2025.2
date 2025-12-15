@@ -145,6 +145,15 @@ class JointRGBHSIDataModule(pl.LightningDataModule):
                     dataloaders.append(dm.predict_dataloader())
             return dataloaders
 
+    def all_dataloader(self):
+        """Return both dataloaders for all data (train+val+test)."""
+        if self.hparams.rgb_only:
+            return self.rgb_dm.all_dataloader()
+        return {
+            "hsi": self.hsi_dm.all_dataloader(),
+            "rgb": self.rgb_dm.all_dataloader(),
+        }
+
     def teardown(self, stage: str | None = None):
         """Teardown both datamodules."""
         if not self.hparams.rgb_only:

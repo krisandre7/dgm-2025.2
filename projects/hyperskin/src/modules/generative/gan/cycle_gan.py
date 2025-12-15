@@ -648,7 +648,7 @@ class CycleGANModule(BasePredictorMixin, pl.LightningModule):
         self.tv.reset()
         self.precision_recall.reset()
 
-        val_loader = self.trainer.datamodule.all_dataloader()
+        val_loader = self.trainer.datamodule.train_dataloader()
 
         sam_sum = 0.0
         rase_sum = 0.0

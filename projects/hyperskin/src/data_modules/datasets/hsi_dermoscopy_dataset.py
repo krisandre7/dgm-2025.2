@@ -148,26 +148,30 @@ class HSIDermoscopyDataset(Dataset):
             "others": images_dir / "OtherCube",
         }
 
-        # Validate paths
-        for label, path in paths.items():
-            if not path.exists():
-                raise FileNotFoundError(f"Missing directory: {path}")
+        # filter out non-existing paths
+        paths = {k: v for k, v in paths.items() if v.exists()}
+
+        if not paths:
+            raise ValueError(f"No valid image directories found in {images_dir}")
 
         data = []
 
         # Process dysplastic nevi and melanoma
         for label in ["dysplastic_nevi", "melanoma"]:
+            if label not in paths:
+                continue
             for mat_file in paths[label].glob("*.mat"):
                 masks = self.find_masks(mat_file)
                 data.append({"file_path": str(mat_file), "label": label, "masks": masks, "filename": mat_file.stem})
 
         # Process other lesions
-        for mat_file in paths["others"].glob("*.mat"):
-            filename = mat_file.stem
-            label = self._extract_other_label(filename)
-            if label:
-                masks = self.find_masks(mat_file)
-                data.append({"file_path": str(mat_file), "label": label, "masks": masks, "filename": filename})
+        if "others" in paths:
+            for mat_file in paths["others"].glob("*.mat"):
+                filename = mat_file.stem
+                label = self._extract_other_label(filename)
+                if label:
+                    masks = self.find_masks(mat_file)
+                    data.append({"file_path": str(mat_file), "label": label, "masks": masks, "filename": filename})
 
         return pd.DataFrame(data)
 
