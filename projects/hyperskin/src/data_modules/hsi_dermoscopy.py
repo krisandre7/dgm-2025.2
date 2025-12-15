@@ -127,8 +127,8 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
                 "sampling_random_state": sampling_random_state,
                 "synth_mode": synth_mode,
                 "synth_ratio": synth_ratio,
-                "num_folds": num_folds,
-                "current_fold": current_fold,
+                "num_folds": int(num_folds),
+                "current_fold": int(current_fold),
                 "filter_channels": filter_channels,
             }
         )
@@ -739,8 +739,8 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
              tags.append("filtered_channels")
 
         if self.hparams.num_folds is not None and self.hparams.current_fold is not None:
-            tags.append(f"fold{self.hparams.current_fold}of{self.hparams.num_folds}")
-            run_name += f"fold{self.hparams.current_fold}of{self.hparams.num_folds}_"
+            tags.append(f"fold{self.hparams.current_fold+1}of{self.hparams.num_folds}")
+            run_name += f"fold{self.hparams.current_fold+1}of{self.hparams.num_folds}_"
 
         if hasattr(hparams, "data_dir") and "crop" in (
             hparams.data_dir.lower()

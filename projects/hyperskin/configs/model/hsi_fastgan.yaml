@@ -85,7 +85,7 @@ trainer:
       init_args:
         monitor: val/FID
         min_delta: 0.01
-        patience: 16
+        patience: 32
         check_every_n_steps: ${model.init_args.val_check_interval}
         verbose: true
         mode: min
