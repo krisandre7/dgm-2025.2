@@ -7,6 +7,8 @@ import math
 import wandb
 from scipy.io import savemat
 
+from src.utils.utils import _iterate_val_loaders
+
 class MetricThresholdGenerationCallback(Callback):
     def __init__(
         self,
@@ -163,7 +165,7 @@ class MetricThresholdGenerationCallback(Callback):
         if is_cyclegan or is_spade:
             # Create a fresh iterator from the train dataloader
             # We use train_dataloader because provided code indicates infinite sampler on train
-            data_iter = iter(trainer.train_dataloader)
+            data_iter = _iterate_val_loaders(trainer.train_dataloader)
 
         with torch.no_grad():
             while generated_count < self.num_samples:

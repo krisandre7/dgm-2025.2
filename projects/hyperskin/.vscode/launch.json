@@ -63,7 +63,8 @@
         // "configs/model/hsi_classifier_densenet201_best.yaml",
         // "exp1"
        "--data.init_args.hsi_config.current_fold=0", 
-       "--data.init_args.hsi_config.allowed_labels=['dysplastic_nevi']",
+       "--data.init_args.hsi_config.allowed_labels=['melanoma']",
+       "--data.init_args.rgb_config.allowed_labels=['melanoma']",
         // "--ckpt_path=logs/hypersynth/jdr423h1/checkpoints/epoch=56-val_dice=0.9139.ckpt",
         // "--ckpt_path=logs/hypersynth/j7od0bbk/checkpoints/step=0-val_MIFID=114.7889.ckpt",
         // "--ckpt_path=logs/hypersynth/98xb02br/checkpoints/step=0-val_FID=80.2161_barlow.ckpt",
