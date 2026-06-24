@@ -82,6 +82,7 @@ class CycleGANModule(BasePredictorMixin, pl.LightningModule):
         pred_hyperspectral: bool = True,
         pred_global_min: float | list[float] | None = None,
         pred_global_max: float | list[float] | None = None,
+        pred_num_samples: int | None = None,
         label_smoothing: float = 0.0,
         noise_std_start: float = 0.0,
         noise_std_end: float = 0.0,
