@@ -22,3 +22,9 @@ WANDB_MODE=disabled python src/main.py predict -c logs/hypersynth/0ta2r1jy/confi
 
 # FastGAN Pretrained Nevi
 WANDB_MODE=disabled python src/main.py predict -c logs/hypersynth/1r91ijoj/config.yaml --ckpt_path="logs/hypersynth/1r91ijoj/checkpoints/step=0-val_FID=97.4476.ckpt" --trainer.logger=false
+
+
+WANDB_MODE=disabled python src/main.py predict -c logs/hypersynth/i3nz2pqi/config.yaml --ckpt_path logs/hypersynth/i3nz2pqi/checkpoints/cyclegan_i3nz2pqi.ckpt --trainer.logger=false --data.init_args.rgb_only=true --model.init_args.pred_hyperspectral=true  --data.init_args.pred_num_samples=500
+
+
+
