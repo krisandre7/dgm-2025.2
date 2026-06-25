@@ -670,7 +670,9 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
         else:
             dataloader = self.all_dataloader()
             sampler = FiniteSampler(
-                dataloader.dataset, self.hparams.pred_num_samples
+                dataloader.dataset,
+                self.hparams.pred_num_samples,
+                allow_replacement=True,
             )
             return DataLoader(
                 dataloader.dataset,
