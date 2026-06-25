@@ -89,8 +89,8 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
             global_min=global_min,
             range_mode=range_mode,
             normalize_mask_tanh=normalize_mask_tanh,
-            num_folds=int(num_folds),
-            current_fold=int(current_fold),
+            num_folds=int(num_folds) if num_folds is not None else None,
+            current_fold=int(current_fold) if current_fold is not None else None,
         )
 
         # Normalize dict -> TaskConfig
@@ -127,8 +127,8 @@ class HSIDermoscopyDataModule(BaseDataModule, pl.LightningDataModule):
                 "sampling_random_state": sampling_random_state,
                 "synth_mode": synth_mode,
                 "synth_ratio": synth_ratio,
-                "num_folds": int(num_folds),
-                "current_fold": int(current_fold),
+                "num_folds": int(num_folds) if num_folds is not None else None,
+                "current_fold": int(current_fold) if current_fold is not None else None,
                 "filter_channels": filter_channels,
             }
         )
