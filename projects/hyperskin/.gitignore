@@ -265,3 +265,6 @@ export/
 wandb
 *.csv
 !images/*.png
+
+AGENTS.md
+copilot-instructions.md

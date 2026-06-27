@@ -28,6 +28,8 @@ WANDB_MODE=disabled python src/main.py predict -c logs/hypersynth/i3nz2pqi/confi
 #cyclegan new
 WANDB_MODE=disabled python src/main.py predict -c logs/hypersynth/i3nz2pqi/config_no-pred.yaml --ckpt_path logs/hypersynth/i3nz2pqi/checkpoints/cyclegan_i3nz2pqi.ckpt --trainer.logger=false --data.init_args.rgb_only=true --model.init_args.pred_hyperspectral=true  --data.init_args.pred_num_samples=500
 
-#fastgan new: 
+#fastgan new melanoma: 
 WANDB_MODE=disabled python src/main.py predict -c logs/hypersynth/fastgan_melanoma/config_melanoma.yaml --ckpt_path="logs/hypersynth/fastgan_melanoma/checkpoints/fastgan_melanoma_step=0-val_MIFID=114.7889.ckpt" --trainer.logger=false --data.init_args.pred_num_samples=500
 
+#fastgan nevi
+WANDB_MODE=disabled python src/main.py predict -c logs/hypersynth/fastgan_nevi/config.yaml --ckpt_path="logs/hypersynth/fastgan_nevi/checkpoints/step=0-val_FID=99.1142.ckpt" --trainer.logger=false --data.init_args.pred_num_samples=500
