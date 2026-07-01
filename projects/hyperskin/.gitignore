@@ -268,3 +268,7 @@ wandb
 
 AGENTS.md
 copilot-instructions.md
+
+milk10k_dataset_full/*.zip
+
+milk10k_dataset_full/unsegmented_milk10k/*

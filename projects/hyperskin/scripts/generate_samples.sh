@@ -33,3 +33,6 @@ WANDB_MODE=disabled python src/main.py predict -c logs/hypersynth/fastgan_melano
 
 #fastgan nevi
 WANDB_MODE=disabled python src/main.py predict -c logs/hypersynth/fastgan_nevi/config.yaml --ckpt_path="logs/hypersynth/fastgan_nevi/checkpoints/step=0-val_FID=99.1142.ckpt" --trainer.logger=false --data.init_args.pred_num_samples=500
+
+#cyclegan complete dataset
+WANDB_MODE=disabled python src/main.py predict -c logs/hypersynth/i3nz2pqi/config_no-pred_complete.yaml --ckpt_path logs/hypersynth/i3nz2pqi/checkpoints/cyclegan_i3nz2pqi.ckpt --trainer.logger=false --data.init_args.rgb_only=true --model.init_args.pred_hyperspectral=true  --data.init_args.pred_num_samples=784
